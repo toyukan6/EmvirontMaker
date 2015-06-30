@@ -8,8 +8,7 @@ using System.Collections.Generic;
 namespace EnvironmentMaker {
     public class Segment : MonoBehaviour {
 
-        private Vector2 startPos;
-        private int cameraX = 0;
+        private Vector2? startPos;
         private GameObject imageObject;
         private Image image;
         private Texture2D firstImage;
@@ -57,28 +56,40 @@ namespace EnvironmentMaker {
 
         // Update is called once per frame
         void Update() {
+            var colors = firstImage.GetPixels();
+            var newTexture = new Texture2D(firstImage.width, firstImage.height);
+            newTexture.SetPixels(colors);
+            var textureCenter = new Vector2(firstImage.width, firstImage.height) * 0.5f;
             if (Input.GetMouseButton(0)) {
                 if (Input.GetMouseButtonDown(0)) {
-                    startPos = GetTexturePos(firstImage);
+                    var pos = GetTexturePos(firstImage);
+                    if (label[(int)pos.y, (int)pos.x] > 0) {
+                        labelButtons[label[(int)pos.y, (int)pos.x]] = true;
+                    } else {
+                        startPos = pos;
+                    }
                 }
-                var colors = firstImage.GetPixels();
-                var textureCenter = new Vector2(firstImage.width, firstImage.height) * 0.5f;
-                var newTexture = new Texture2D(firstImage.width, firstImage.height);
-                newTexture.SetPixels(colors);
                 ChangeColor(newTexture);
-                newTexture.Apply();
-                DestroyImmediate(image.sprite);
-                image.sprite = Sprite.Create(newTexture, new Rect(0, 0, newTexture.width, newTexture.height), textureCenter);
             } else if (Input.GetMouseButtonUp(0)) {
                 ChangeColor(firstImage);
+                newTexture.SetPixels(colors);
+                startPos = null;
+                for (int i = 0; i < labelButtons.Count; i++) {
+                    labelButtons[i] = false;
+                }
             }
+            ChoosedLabel(newTexture);
+            newTexture.Apply();
+            DestroyImmediate(image.sprite);
+            image.sprite = Sprite.Create(newTexture, new Rect(0, 0, newTexture.width, newTexture.height), textureCenter);
         }
 
-        private void ChoosedLabel() {
+        private void ChoosedLabel(Texture2D texture) {
             for (int i = 0; i < label.GetLength(0); i++) {
                 for (int j = 0; j < label.GetLength(1); j++) {
                     if (labelButtons[label[i, j]]) {
-
+                        var c = texture.GetPixel(j, i);
+                        texture.SetPixel(j, i, new Color(c.r * 2, c.g, c.b, c.a));
                     }
                 }
             }
@@ -92,16 +103,16 @@ namespace EnvironmentMaker {
 
         public void OnButtonClick() {
             
-            Application.LoadLevel("second");
+            Application.LoadLevel("Second");
         }
 
         private void ChangeColor(Texture2D texture) {
             var pos = GetTexturePos(texture);
-            if (pos.x >= 0 && pos.y >= 0 && pos.x < texture.width && pos.y < texture.height) {
-                var minX = Mathf.Min(pos.x, startPos.x);
-                var minY = Mathf.Min(pos.y, startPos.y);
-                var maxX = Mathf.Max(pos.x, startPos.x);
-                var maxY = Mathf.Max(pos.y, startPos.y);
+            if (pos.x >= 0 && pos.y >= 0 && pos.x < texture.width && pos.y < texture.height && startPos.HasValue) {
+                var minX = Mathf.Min(pos.x, startPos.Value.x);
+                var minY = Mathf.Min(pos.y, startPos.Value.y);
+                var maxX = Mathf.Max(pos.x, startPos.Value.x);
+                var maxY = Mathf.Max(pos.y, startPos.Value.y);
                 var sizeX = maxX - minX;
                 var sizeY = maxY - minY;
                 for (int i = 0; i < sizeX; i++) {
