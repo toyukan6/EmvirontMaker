@@ -10,7 +10,6 @@ namespace UnityStandardAssets.Characters.FirstPerson {
         private List<Vector3> positions;
         private Texture2D texture;
         private Vector3 startPosition;
-        public Texture2D Depth { get; private set; }
 
         private void Start() {
             positions = new List<Vector3>();
@@ -19,14 +18,13 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             texture.SetPixels(tex.GetPixels());
             texture.Apply();
             startPosition = this.transform.position;
-            Depth = Resources.Load<Texture2D>("depth_texture.jpg");
         }
 
         public Texture2D GetTexture() { return texture; }
 
         public void SetTexture2D(Texture2D texture) {
-            DestroyImmediate(this.texture);
             this.texture = texture;
+            GetComponent<MeshRenderer>().material.mainTexture = this.texture;
         }
 
         private void Update() {

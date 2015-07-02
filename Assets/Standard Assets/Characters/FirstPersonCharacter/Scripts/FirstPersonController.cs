@@ -1,6 +1,8 @@
+using OpenCvSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 //using System.Threading.Tasks;
 using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
@@ -64,7 +66,16 @@ namespace UnityStandardAssets.Characters.FirstPerson {
         private GameObject back;
         private TextureController t_contorller;
         private GameObject pointer;
+        private TextureManager manager;
+        private Texture2D[][] textures;
+        private Vector2[][] starts;
+        private Vector2[][] ends;
+        private Vector3 startPos;
+        private GameObject[] cylinders;
+        private GameObject[] cylinders_oppo;
+        private int textureNumber = 0;
         public float Mouse;
+        public GameObject Cylinder;
 
         private void Awake() {
             back = GameObject.Find("Back");
@@ -85,14 +96,37 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             lastDrawPos = null;
             t_contorller = back.GetComponent<TextureController>();
             pointer = GameObject.Find("Pointer");
+            manager = GameObject.Find("TextureManager").GetComponent<TextureManager>();
+            textures = manager.Textures;
+            starts = manager.StartPoses;
+            ends = manager.EndPoses;
+            t_contorller.SetTexture2D(textures[0][0]);
+            cylinders = new GameObject[textures.Max(t => t.Length) - 1];
+            cylinders_oppo = new GameObject[textures.Max(t => t.Length) - 1];
+            MakeCylinders();
+            startPos = this.transform.position;
             m_MouseLook.Init(transform, m_Camera.transform);
         }
 
+        private void MakeCylinders() {
+            for (int j = 1; j < starts[0].Length; j++) {
+                float percent = starts[0][j].x / textures[0][0].width;
+                float theta = Mathf.PI * 2 * percent;
+                var offset = new Vector3(50 * -Mathf.Sin(theta), 0, 50 * Mathf.Cos(theta));
+                var c = Instantiate(Cylinder, this.transform.position + offset, Quaternion.identity) as GameObject;
+                var v = starts[0][j] - ends[0][j];
+                c.transform.localScale = new Vector3(v.x, v.y, v.x) / 10;
+                c.GetComponent<CylinderTextureController>().SetTexture(textures[0][j]);
+                cylinders[j - 1] = c;
+                cylinders_oppo[j - 1] = Instantiate(c, this.transform.position - offset, Quaternion.identity) as GameObject;
+            }
+        }
 
         // Update is called once per frame
         private void Update() {
             RotateView();
             PointerToTexture();
+            ChangeTexture();
             if (Input.GetMouseButton(0)) {
                 var pos = CrossPlatformInputManager.mousePosition;
                 mousePositions.Add(pos);
@@ -107,6 +141,23 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             m_NextStep = m_StepCycle + .5f;
         }
 
+        private void ChangeTexture() {
+            var pos = this.transform.position;
+            int tn = textureNumber;
+            if (startPos.x - pos.x > 0.5) {
+                if (textureNumber == 0)
+                    textureNumber = 1;
+            } else if (textureNumber == 1) {
+                textureNumber = 0;
+            }
+            if (tn != textureNumber) {
+                t_contorller.SetTexture2D(textures[textureNumber][0]);
+                for (int i = 0; i < cylinders.Length; i++) {
+                    cylinders[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 1]);
+                    cylinders_oppo[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 1]);
+                }
+            }
+        }
 
         private void FixedUpdate() {
             float speed;
@@ -314,9 +365,18 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             var textureStartPoint = new Vector3(50, 0, 0);
             var pointerPos = pointer.transform.position;
             var theta = Mathf.Atan2(pointerPos.z - textureStartPoint.z, pointerPos.x - textureStartPoint.x);
-            print(theta);
-            var lengthPercent = theta / Mathf.PI;
-
+            theta -= Mathf.Sign(theta) * Mathf.PI;
+            if (theta > 0) theta = Mathf.PI / 2 - theta;
+            var lengthPercent = Mathf.Abs(theta) / Mathf.PI * 2;
+            float x = texture.width * lengthPercent;
+            float y = (pointerPos.y + 30) * texture.height / 60;
+            //texture.SetPixel((int)x, (int)y, Color.black);
+            //texture.SetPixel((int)x - 1, (int)y, Color.black);
+            //texture.SetPixel((int)x + 1, (int)y, Color.black);
+            //texture.SetPixel((int)x, (int)y - 1, Color.black);
+            //texture.SetPixel((int)x, (int)y + 1, Color.black);
+            //texture.Apply();
+            //print(string.Format("({0}, {1})", x, y));
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit) {
