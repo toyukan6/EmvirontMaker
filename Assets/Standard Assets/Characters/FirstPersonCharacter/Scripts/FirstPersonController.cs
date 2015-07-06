@@ -115,7 +115,7 @@ namespace UnityStandardAssets.Characters.FirstPerson {
                 var offset = new Vector3(50 * -Mathf.Sin(theta), 0, 50 * Mathf.Cos(theta));
                 var c = Instantiate(Cylinder, this.transform.position + offset, Quaternion.identity) as GameObject;
                 var v = starts[0][j] - ends[0][j];
-                c.transform.localScale = new Vector3(v.x, v.y, v.x) / 10;
+                c.transform.localScale = new Vector3(v.x, v.y, v.x) / 100;
                 c.GetComponent<CylinderTextureController>().SetTexture(textures[0][j]);
                 cylinders[j - 1] = c;
                 cylinders_oppo[j - 1] = Instantiate(c, this.transform.position - offset, Quaternion.identity) as GameObject;
@@ -156,6 +156,9 @@ namespace UnityStandardAssets.Characters.FirstPerson {
                     cylinders[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 1]);
                     cylinders_oppo[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 1]);
                 }
+            }
+            for (int i = 0; i < cylinders.Length; i++) {
+                cylinders[i].transform.localEulerAngles = new Vector3(cylinders[i].transform.localEulerAngles.x, this.transform.eulerAngles.y, this.transform.eulerAngles.z);
             }
         }
 

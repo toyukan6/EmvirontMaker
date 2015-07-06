@@ -53,6 +53,7 @@ namespace EnvironmentMaker {
             }
             labelButtons = new List<bool>();
             labelButtons.Add(false);
+            labelButtons.Add(false);
             for (int i = 0; i < imageObjects.Length; i++) {
                 var texture = (Texture2D)images[i].mainTexture;
                 imageObjects[i].GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, texture.width);
@@ -81,6 +82,47 @@ namespace EnvironmentMaker {
             for (int i = 0; i < ends.Length; i++) {
                 ends[i] = new List<Vector2>();
                 ends[i].Add(Vector2.zero);
+            }
+            for (int i = 0; i < firstImages.Length; i++) {
+                AreaExpantion(i);
+            }
+        }
+
+        private void AreaExpantion(int index) {
+            var queue = new Queue<Vector>();
+            var image = firstImages[index];
+            for (int j = 0; j < image.width; j++) {
+                for (int i = 0; i < image.height; i++) {
+                    var d = image.GetPixel(j, i);
+                    if (d.Length() > 1.0 / 1000) {
+                        queue.Enqueue(new Vector(j, i));
+                        break;
+                    }
+                }
+            }
+            while (queue.Count > 0) {
+                var q = queue.Dequeue();
+                if (labels[index][q.Y, q.X] == 0) {
+                    labels[index][q.Y, q.X] = 1;
+                    var d = image.GetPixel(q.X, q.Y);
+                    var candidacy = new List<Vector>();
+                    if (q.X > 0) candidacy.Add(new Vector(q.X - 1, q.Y));
+                    if (q.X <image.width - 1) candidacy.Add(new Vector(q.X + 1, q.Y));
+                    if (q.Y > 0) candidacy.Add(new Vector(q.X, q.Y - 1));
+                    if (q.Y < image.height - 1) candidacy.Add(new Vector(q.X, q.Y + 1));
+                    if (q.X > 0 && q.Y > 0) candidacy.Add(new Vector(q.X - 1, q.Y - 1));
+                    if (q.X > 0 && q.Y < image.height - 1) candidacy.Add(new Vector(q.X - 1, q.Y + 1));
+                    if (q.X < image.width - 1 && q.Y > 0) candidacy.Add(new Vector(q.X + 1, q.Y - 1));
+                    if (q.X < image.width - 1 && q.Y < image.height - 1) candidacy.Add(new Vector(q.X + 1, q.Y + 1));
+                    foreach (var c in candidacy) {
+                        var d2 = image.GetPixel(c.X, c.Y);
+                        var l = (d - d2).Length();
+                        int[] thresholds = new int[] { 17, 20 };
+                        if (l < 1.0 / thresholds[index]) {
+                            queue.Enqueue(c);
+                        }
+                    }
+                }
             }
         }
 
@@ -250,6 +292,20 @@ namespace EnvironmentMaker {
             }
 
             return max;
+        }
+    }
+
+    static class ColorExtension {
+        public static float Length(this Color color) {
+            return Mathf.Sqrt(color.r * color.r + color.g * color.g + color.b * color.b);
+        }
+    }
+    struct Vector {
+        public int X { get; private set; }
+        public int Y { get; private set; }
+        public Vector(int x, int y) {
+            this.X = x;
+            this.Y = y;
         }
     }
 }

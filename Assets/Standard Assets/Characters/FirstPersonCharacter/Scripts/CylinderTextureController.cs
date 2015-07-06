@@ -16,5 +16,9 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             tex.Apply();
             this.GetComponent<MeshRenderer>().material.mainTexture = tex;
         }
+
+        void Start() {
+            this.transform.localEulerAngles = new Vector3(270, 0, 0);
+        }
     }
 }
