@@ -1,9 +1,7 @@
-using OpenCvSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-//using System.Threading.Tasks;
 using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
 using UnityStandardAssets.Utility;
@@ -65,6 +63,7 @@ namespace UnityStandardAssets.Characters.FirstPerson {
         private Vector3? lastDrawPos;
         private GameObject back;
         private TextureController t_contorller;
+        private GameObject ground;
         private GameObject pointer;
         private TextureManager manager;
         private Texture2D[][] textures;
@@ -101,15 +100,17 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             starts = manager.StartPoses;
             ends = manager.EndPoses;
             t_contorller.SetTexture2D(textures[0][0]);
-            cylinders = new GameObject[textures.Max(t => t.Length) - 1];
-            cylinders_oppo = new GameObject[textures.Max(t => t.Length) - 1];
+            ground = GameObject.Find("Ground");
+            ground.GetComponent<MeshRenderer>().material.mainTexture = textures[0][1];
+            cylinders = new GameObject[textures.Max(t => t.Length) - 2];
+            cylinders_oppo = new GameObject[textures.Max(t => t.Length) - 2];
             MakeCylinders();
             startPos = this.transform.position;
             m_MouseLook.Init(transform, m_Camera.transform);
         }
 
         private void MakeCylinders() {
-            for (int j = 1; j < starts[0].Length; j++) {
+            for (int j = 2; j < starts[0].Length; j++) {
                 float percent = starts[0][j].x / textures[0][0].width;
                 float theta = Mathf.PI * 2 * percent;
                 var offset = new Vector3(50 * -Mathf.Sin(theta), 0, 50 * Mathf.Cos(theta));
@@ -117,19 +118,28 @@ namespace UnityStandardAssets.Characters.FirstPerson {
                 var v = starts[0][j] - ends[0][j];
                 c.transform.localScale = new Vector3(v.x, v.y, v.x) / 100;
                 c.GetComponent<CylinderTextureController>().SetTexture(textures[0][j]);
-                cylinders[j - 1] = c;
-                cylinders_oppo[j - 1] = Instantiate(c, this.transform.position - offset, Quaternion.identity) as GameObject;
+                cylinders[j - 2] = c;
+                cylinders_oppo[j - 2] = Instantiate(c, this.transform.position - offset, Quaternion.identity) as GameObject;
             }
         }
 
         // Update is called once per frame
         private void Update() {
             RotateView();
-            PointerToTexture();
             ChangeTexture();
             if (Input.GetMouseButton(0)) {
                 var pos = CrossPlatformInputManager.mousePosition;
                 mousePositions.Add(pos);
+                var t_pos = PointerToTexture();
+                for (int i = 0; i < textures.Length; i++) {
+                    var t = textures[i][0];
+                    t.SetPixel((int)t_pos.x, (int)t_pos.y, Color.black);
+                    t.SetPixel((int)t_pos.x - 1, (int)t_pos.y, Color.black);
+                    t.SetPixel((int)t_pos.x + 1, (int)t_pos.y, Color.black);
+                    t.SetPixel((int)t_pos.x, (int)t_pos.y - 1, Color.black);
+                    t.SetPixel((int)t_pos.x, (int)t_pos.y + 1, Color.black);
+                    t.Apply();
+                }
             } else if (lastDrawPos.HasValue) {
                 lastDrawPos = null;
             }
@@ -153,8 +163,8 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             if (tn != textureNumber) {
                 t_contorller.SetTexture2D(textures[textureNumber][0]);
                 for (int i = 0; i < cylinders.Length; i++) {
-                    cylinders[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 1]);
-                    cylinders_oppo[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 1]);
+                    cylinders[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 2]);
+                    cylinders_oppo[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 2]);
                 }
             }
             for (int i = 0; i < cylinders.Length; i++) {
@@ -182,61 +192,11 @@ namespace UnityStandardAssets.Characters.FirstPerson {
                 m_MoveDir += Physics.gravity * m_GravityMultiplier * Time.fixedDeltaTime;
             }
             m_CollisionFlags = m_CharacterController.Move(m_MoveDir * Time.fixedDeltaTime);
-            back.transform.position = this.transform.position;
+            back.transform.position = this.transform.position + new Vector3(0, 23, 0);
 
             //ProgressStepCycle(speed);
             UpdateCameraPosition(speed);
         }
-
-        //private void Paint() {
-        //    if (mousePositions.Count > 0) {
-        //        var data = texture.GetPixels();
-        //        int width = 1;
-        //        if (!lastDrawPos.HasValue) {
-        //            lastDrawPos = mousePositions[0];
-        //            mousePositions.RemoveAt(0);
-        //        }
-        //        if (mousePositions.Count == 0) {
-        //            var pos = lastDrawPos.Value;
-        //            if (pos.x > 0 && pos.x < Screen.width && pos.y > 0 && pos.y < Screen.height)
-        //                BlackOut((int)pos.x, (int)(pos.y), data, width);
-        //        } else {
-        //            foreach (var pos in mousePositions) {
-        //                if (pos.x > 0 && pos.x < Screen.width && pos.y > 0 && pos.y < Screen.height) {
-        //                    DrawLine(lastDrawPos.Value, pos, data, width);
-        //                }
-        //                lastDrawPos = pos;
-        //            }
-        //        }
-        //        Texture2D newTex = new Texture2D(texture.width, texture.height);
-        //        newTex.SetPixels(data);
-        //        newTex.Apply();
-        //        DestroyImmediate(texture);
-        //        texture = newTex;
-        //        mousePositions.Clear();
-        //    }
-        //}
-
-        //private void DrawLine(Vector3 start, Vector3 end, Color[] data, int range) {
-        //    var delta = (end - start).normalized / 2;
-        //    while((start - end).magnitude > 1) {
-        //        if (start.x > 0 && start.x < Screen.width && start.y > 0 && start.y < Screen.height) {
-        //            BlackOut((int)(start.x), (int)(start.y), data, range);
-        //        }
-        //        start += delta;
-        //    }
-        //}
-
-        //private void BlackOut(int x, int y, Color[] data, int range) {
-        //    int index = (x + m_Target) % texture.width + y * texture.height / Screen.height * texture.width;
-        //    ChangeIListData(index, data, Color.black);
-        //    for (int i = 1; i < range; i++) {
-        //        ChangeIListData(index + i, data, Color.black);
-        //        ChangeIListData(index - i, data, Color.black);
-        //        ChangeIListData(index + texture.width * i, data, Color.black);
-        //        ChangeIListData(index - texture.width * i, data, Color.black);
-        //    }
-        //}
 
         private void ChangeIListData<T>(int index, IList a, T data) {
             if (index >= 0 && index < a.Count) {
@@ -362,7 +322,7 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             pointer.transform.eulerAngles = this.transform.eulerAngles; //í‚É‚±‚Á‚¿‚ðŒü‚­‚æ‚¤‚É
         }
 
-        private void PointerToTexture() {
+        private Vector2 PointerToTexture() {
             var texture = t_contorller.GetTexture();
             var screenLength = back.transform.localScale.x * Mathf.PI;
             var textureStartPoint = new Vector3(50, 0, 0);
@@ -372,14 +332,8 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             if (theta > 0) theta = Mathf.PI / 2 - theta;
             var lengthPercent = Mathf.Abs(theta) / Mathf.PI * 2;
             float x = texture.width * lengthPercent;
-            float y = (pointerPos.y + 30) * texture.height / 60;
-            //texture.SetPixel((int)x, (int)y, Color.black);
-            //texture.SetPixel((int)x - 1, (int)y, Color.black);
-            //texture.SetPixel((int)x + 1, (int)y, Color.black);
-            //texture.SetPixel((int)x, (int)y - 1, Color.black);
-            //texture.SetPixel((int)x, (int)y + 1, Color.black);
-            //texture.Apply();
-            //print(string.Format("({0}, {1})", x, y));
+            float y = (pointerPos.y + 6) * texture.height / 60;
+            return new Vector2(x, y);
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit) {

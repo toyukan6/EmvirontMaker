@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using OpenCvSharp;
 using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,6 @@ namespace EnvironmentMaker {
         private int[][,] labels;
         private List<bool> labelButtons;
         private float[] offsetY;
-        private int flame = 0;
         private List<Vector2>[] starts;
         private List<Vector2>[] ends;
 
@@ -63,7 +61,7 @@ namespace EnvironmentMaker {
                 newTexture.SetPixels(colors);
                 newTexture.Apply();
                 var textureCenter = new Vector2(texture.width, texture.height) * 0.5f;
-                images[i].sprite = Sprite.Create(newTexture, new Rect(0, 0, newTexture.width, newTexture.height), textureCenter);
+                images[i].sprite = Sprite.Create(newTexture, new UnityEngine.Rect(0, 0, newTexture.width, newTexture.height), textureCenter);
             }
             offsetY = new float[imageObjects.Length];
             float sum = 0;
@@ -77,10 +75,12 @@ namespace EnvironmentMaker {
             for (int i = 0; i < starts.Length; i++) {
                 starts[i] = new List<Vector2>();
                 starts[i].Add(Vector2.zero);
+                starts[i].Add(Vector2.zero);
             }
             ends = new List<Vector2>[imageObjects.Length];
             for (int i = 0; i < ends.Length; i++) {
                 ends[i] = new List<Vector2>();
+                ends[i].Add(Vector2.zero);
                 ends[i].Add(Vector2.zero);
             }
             for (int i = 0; i < firstImages.Length; i++) {
@@ -117,7 +117,7 @@ namespace EnvironmentMaker {
                     foreach (var c in candidacy) {
                         var d2 = image.GetPixel(c.X, c.Y);
                         var l = (d - d2).Length();
-                        int[] thresholds = new int[] { 17, 20 };
+                        double[] thresholds = new double[] { 18, 23 };
                         if (l < 1.0 / thresholds[index]) {
                             queue.Enqueue(c);
                         }
@@ -152,6 +152,7 @@ namespace EnvironmentMaker {
                 }
             }
             for (int i = 0; i < showImages.Length; i++) {
+                bool changed = false;
                 var pos = GetTexturePos(showImages[i], i);
                 var colors = showImages[i].GetPixels();
                 var newTexture = new Texture2D(showImages[i].width, showImages[i].height);
@@ -178,13 +179,20 @@ namespace EnvironmentMaker {
                             labelButtons[j] = false;
                         }
                     }
+                    changed = true;
                 }
-                ChoosedLabel(newTexture, i);
+                if (labelButtons.Any(lb => lb)) {
+                    ChoosedLabel(newTexture, i);
+                    changed = true;
+                }
                 newTexture.Apply();
-                DestroyImmediate(images[i].sprite);
-                images[i].sprite = Sprite.Create(newTexture, new Rect(0, 0, newTexture.width, newTexture.height), textureCenter);
+                if (changed) {
+                    DestroyImmediate(images[i].sprite);
+                    images[i].sprite = Sprite.Create(newTexture, new UnityEngine.Rect(0, 0, newTexture.width, newTexture.height), textureCenter);
+                } else {
+                    DestroyImmediate(newTexture);
+                }
             }
-            flame++;
         }
 
         private void ChoosedLabel(Texture2D texture, int k) {
@@ -219,7 +227,8 @@ namespace EnvironmentMaker {
                 int labelMax = Maximize(labels[i]);
                 textures[i] = new Texture2D[labelMax + 1];
                 textures[i][0] = new Texture2D(showImages[i].width, showImages[i].height);
-                for (int j = 1; j < textures[i].Length; j++) {
+                textures[i][1] = new Texture2D(showImages[i].width, showImages[i].height);
+                for (int j = 2; j < textures[i].Length; j++) {
                     textures[i][j] = new Texture2D((int)Mathf.Abs(starts[i][j].x - ends[i][j].x), (int)Mathf.Abs(starts[i][j].y - ends[i][j].y));
                 }
             }
@@ -277,7 +286,7 @@ namespace EnvironmentMaker {
 
         private void OnGUI() {
             for (int i = 0; i < labelButtons.Count; i++) {
-                GUI.TextArea(new Rect(0, 100 * i, 100, 100), "ラベル" + i);
+                GUI.TextArea(new UnityEngine.Rect(0, 100 * i, 100, 100), "ラベル" + i);
             }
         }
 
