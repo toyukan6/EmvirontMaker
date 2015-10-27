@@ -59,26 +59,6 @@ namespace UnityStandardAssets.Characters.FirstPerson {
         private float m_NextStep;
         private AudioSource m_AudioSource;
         private int m_Target;
-        private List<Vector3> mousePositions;
-        private Vector3? lastDrawPos;
-        private GameObject back;
-        private TextureController t_contorller;
-        private GameObject ground;
-        private GameObject pointer;
-        private TextureManager manager;
-        private Texture2D[][] textures;
-        private Vector2[][] starts;
-        private Vector2[][] ends;
-        private Vector3 startPos;
-        private GameObject[] cylinders;
-        private GameObject[] cylinders_oppo;
-        private int textureNumber = 0;
-        public float Mouse;
-        public GameObject Cylinder;
-
-        private void Awake() {
-            back = GameObject.Find("Back");
-        }
 
         // Use this for initialization
         private void Start() {
@@ -91,85 +71,18 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             m_NextStep = m_StepCycle / 2f;
             m_AudioSource = GetComponent<AudioSource>();
             m_Target = 0;
-            mousePositions = new List<Vector3>();
-            lastDrawPos = null;
-            t_contorller = back.GetComponent<TextureController>();
-            pointer = GameObject.Find("Pointer");
-            manager = GameObject.Find("TextureManager").GetComponent<TextureManager>();
-            textures = manager.Textures;
-            starts = manager.StartPoses;
-            ends = manager.EndPoses;
-            t_contorller.SetTexture2D(textures[0][0]);
-            ground = GameObject.Find("Ground");
-            ground.GetComponent<MeshRenderer>().material.mainTexture = textures[0][1];
-            cylinders = new GameObject[textures.Max(t => t.Length) - 2];
-            cylinders_oppo = new GameObject[textures.Max(t => t.Length) - 2];
-            MakeCylinders();
-            startPos = this.transform.position;
             m_MouseLook.Init(transform, m_Camera.transform);
-        }
-
-        private void MakeCylinders() {
-            for (int j = 2; j < starts[0].Length; j++) {
-                float percent = starts[0][j].x / textures[0][0].width;
-                float theta = Mathf.PI * 2 * percent;
-                var offset = new Vector3(50 * -Mathf.Sin(theta), 0, 50 * Mathf.Cos(theta));
-                var c = Instantiate(Cylinder, this.transform.position + offset, Quaternion.identity) as GameObject;
-                var v = starts[0][j] - ends[0][j];
-                c.transform.localScale = new Vector3(v.x, v.y, v.x) / 100;
-                c.GetComponent<CylinderTextureController>().SetTexture(textures[0][j]);
-                cylinders[j - 2] = c;
-                cylinders_oppo[j - 2] = Instantiate(c, this.transform.position - offset, Quaternion.identity) as GameObject;
-            }
         }
 
         // Update is called once per frame
         private void Update() {
             RotateView();
-            ChangeTexture();
-            if (Input.GetMouseButton(0)) {
-                var pos = CrossPlatformInputManager.mousePosition;
-                mousePositions.Add(pos);
-                var t_pos = PointerToTexture();
-                for (int i = 0; i < textures.Length; i++) {
-                    var t = textures[i][0];
-                    t.SetPixel((int)t_pos.x, (int)t_pos.y, Color.black);
-                    t.SetPixel((int)t_pos.x - 1, (int)t_pos.y, Color.black);
-                    t.SetPixel((int)t_pos.x + 1, (int)t_pos.y, Color.black);
-                    t.SetPixel((int)t_pos.x, (int)t_pos.y - 1, Color.black);
-                    t.SetPixel((int)t_pos.x, (int)t_pos.y + 1, Color.black);
-                    t.Apply();
-                }
-            } else if (lastDrawPos.HasValue) {
-                lastDrawPos = null;
-            }
         }
 
         private void PlayLandingSound() {
             m_AudioSource.clip = m_LandSound;
             m_AudioSource.Play();
             m_NextStep = m_StepCycle + .5f;
-        }
-
-        private void ChangeTexture() {
-            var pos = this.transform.position;
-            int tn = textureNumber;
-            if (startPos.x - pos.x > 0.5) {
-                if (textureNumber == 0)
-                    textureNumber = 1;
-            } else if (textureNumber == 1) {
-                textureNumber = 0;
-            }
-            if (tn != textureNumber) {
-                t_contorller.SetTexture2D(textures[textureNumber][0]);
-                for (int i = 0; i < cylinders.Length; i++) {
-                    cylinders[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 2]);
-                    cylinders_oppo[i].GetComponent<CylinderTextureController>().SetTexture(textures[textureNumber][i + 2]);
-                }
-            }
-            for (int i = 0; i < cylinders.Length; i++) {
-                cylinders[i].transform.localEulerAngles = new Vector3(cylinders[i].transform.localEulerAngles.x, this.transform.eulerAngles.y, this.transform.eulerAngles.z);
-            }
         }
 
         private void FixedUpdate() {
@@ -192,20 +105,9 @@ namespace UnityStandardAssets.Characters.FirstPerson {
                 m_MoveDir += Physics.gravity * m_GravityMultiplier * Time.fixedDeltaTime;
             }
             m_CollisionFlags = m_CharacterController.Move(m_MoveDir * Time.fixedDeltaTime);
-            back.transform.position = this.transform.position + new Vector3(0, 23, 0);
 
             //ProgressStepCycle(speed);
             UpdateCameraPosition(speed);
-        }
-
-        private void ChangeIListData<T>(int index, IList a, T data) {
-            if (index >= 0 && index < a.Count) {
-                try {
-                    a[index] = data;
-                } catch(ArrayTypeMismatchException e){
-                    print(e.Message);
-                }
-            }
         }
 
         private void PlayJumpSound() {
@@ -303,37 +205,6 @@ namespace UnityStandardAssets.Characters.FirstPerson {
             var vec = new Vector3(1 * Mathf.Sin(theta), 0, 1 * Mathf.Cos(theta));
 
             transform.localRotation = Quaternion.LookRotation(vec);
-            MovePointer(this.transform.position + vec * back.transform.localScale.x / 2);
-        }
-
-        private void MovePointer(Vector3 pos) {
-            var m_pos = CrossPlatformInputManager.mousePosition;
-            var screenSize = new Vector3(Screen.width, Screen.height, 0);
-            var screenCenter = screenSize * 0.5f;
-            var diff = m_pos - screenCenter;
-            //Ž‹“_‚É‚æ‚édiff‚Ì•â³
-            float theta = m_Target * Mathf.PI / 180;
-            diff = new Vector3(diff.x * Mathf.Cos(theta) + diff.z * Mathf.Sin(theta), diff.y, diff.z * Mathf.Cos(theta) - diff.x * Mathf.Sin(theta));
-            var length = pos.magnitude;
-            pos += diff * Mouse;
-            //’·‚³‚ð•Û‚Â
-            pos = pos.normalized * length;
-            pointer.transform.position = pos;
-            pointer.transform.eulerAngles = this.transform.eulerAngles; //í‚É‚±‚Á‚¿‚ðŒü‚­‚æ‚¤‚É
-        }
-
-        private Vector2 PointerToTexture() {
-            var texture = t_contorller.GetTexture();
-            var screenLength = back.transform.localScale.x * Mathf.PI;
-            var textureStartPoint = new Vector3(50, 0, 0);
-            var pointerPos = pointer.transform.position;
-            var theta = Mathf.Atan2(pointerPos.z - textureStartPoint.z, pointerPos.x - textureStartPoint.x);
-            theta -= Mathf.Sign(theta) * Mathf.PI;
-            if (theta > 0) theta = Mathf.PI / 2 - theta;
-            var lengthPercent = Mathf.Abs(theta) / Mathf.PI * 2;
-            float x = texture.width * lengthPercent;
-            float y = (pointerPos.y + 6) * texture.height / 60;
-            return new Vector2(x, y);
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit) {
