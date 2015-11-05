@@ -66,11 +66,29 @@ namespace EnvironmentMaker {
                 var vecs = new LinkedList<Vector3>();
                 var cols = new LinkedList<Color>();
                 for (int i = 0; i < 4; i++) {
+                    var plist = new List<Point>();
+                    var vlist = new LinkedList<Vector3>();
+                    var clist = new LinkedList<Color>();
                     var fileName = Path.Combine(baseDir, "model_" + num  + "_" + i + ".ply");
                     foreach (var p in reader.Load(fileName)) {
-                        var v = p.GetVector3();
-                        vecs.AddFirst(v);
-                        cols.AddFirst(p.GetColor());
+                        plist.Add(p);
+                    }
+                    plist.Sort((p1, p2) => Math.Sign(p1.Y - p2.Y));
+                    foreach (var p in plist) {
+                        vlist.AddLast(p.GetVector3());
+                        clist.AddLast(p.GetColor());
+                    }
+                    float minY = 0, minListY = 0;
+                    var slices = RoundSlices(vecs);
+                    if (vecs.Count > 0) {
+                        minY = vecs.Min(v => v.y);
+                        minListY = vlist.Min(v => v.y);
+                    }
+                    foreach (var v in vlist) {
+                        vecs.AddFirst(v + new Vector3(0, minY - minListY, 0));
+                    }
+                    foreach (var c in clist) {
+                        cols.AddFirst(c);
                     }
                 }
                 points.Add(vecs.ToArray());
@@ -96,6 +114,19 @@ namespace EnvironmentMaker {
         }
 
         void HeadSearch(List<Vector3> vecs) {
+        }
+
+        List<List<Vector3>> RoundSlices(LinkedList<Vector3> vecs) {
+            var slices = new List<List<Vector3>>();
+            for (int i = 0; i < vecs.Count; i++) {
+                var baseVec = vecs.ElementAt(i);
+                var take = vecs.TakeWhile(v => baseVec.y - v.y < 0.01);
+                foreach (var t in take) {
+                    i++;
+                }
+                slices.Add(take.ToList());
+            }
+            return slices;
         }
     }
 }
