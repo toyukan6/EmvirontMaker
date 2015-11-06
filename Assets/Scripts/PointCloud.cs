@@ -46,7 +46,7 @@ namespace EnvironmentMaker {
         }
 
         void FixedUpdate() {
-            //Destroy(GetComponent<MeshFilter>().mesh);
+            Destroy(GetComponent<MeshFilter>().mesh);
             mesh = new Mesh();
             GetComponent<MeshFilter>().mesh = mesh;
 
@@ -79,7 +79,7 @@ namespace EnvironmentMaker {
                         clist.AddLast(p.GetColor());
                     }
                     float minY = 0, minListY = 0;
-                    var slices = RoundSlices(vecs);
+                    //var slices = RoundSlices(vecs);
                     if (vecs.Count > 0) {
                         minY = vecs.Min(v => v.y);
                         minListY = vlist.Min(v => v.y);
@@ -113,20 +113,7 @@ namespace EnvironmentMaker {
             }
         }
 
-        void HeadSearch(List<Vector3> vecs) {
-        }
+        void HeadSearch(List<Vector3> vecs) {        }
 
-        List<List<Vector3>> RoundSlices(LinkedList<Vector3> vecs) {
-            var slices = new List<List<Vector3>>();
-            for (int i = 0; i < vecs.Count; i++) {
-                var baseVec = vecs.ElementAt(i);
-                var take = vecs.TakeWhile(v => baseVec.y - v.y < 0.01);
-                foreach (var t in take) {
-                    i++;
-                }
-                slices.Add(take.ToList());
-            }
-            return slices;
-        }
     }
 }
