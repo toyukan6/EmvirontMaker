@@ -1,0 +1,202 @@
+********************************************************************************
+*                    Tuesday, November 10, 2015 6:33:42 PM                     *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-firstpass.dll
+Project directory: C:\Users\toyuk\Documents\京大\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-1ba599e69cb936a4887314b4c416e776
+Exit code: 0
+Elapsed time: 0.65 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(46,27): warning CS0649: Field 'FirstPersonController.m_JumpSound' is never assigned to, and will always have its default value null
+1: Assets\Standard Assets\Utility\WaypointProgressTracker.cs(14,50): warning CS0649: Field 'WaypointProgressTracker.circuit' is never assigned to, and will always have its default value null
+2: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(30,27): warning CS0649: Field 'FirstPersonController.m_MouseLook' is never assigned to, and will always have its default value null
+3: Assets\Standard Assets\Utility\SmoothFollow.cs(10,21): warning CS0649: Field 'SmoothFollow.target' is never assigned to, and will always have its default value null
+4: Assets\Standard Assets\Utility\PlatformSpecificContent.cs(24,39): warning CS0649: Field 'PlatformSpecificContent.m_ChildrenOfThisObject' is never assigned to, and will always have its default value false
+5: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(32,22): warning CS0649: Field 'FirstPersonController.m_UseFovKick' is never assigned to, and will always have its default value false
+6: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(19,23): warning CS0649: Field 'FirstPersonController.m_RunSpeed' is never assigned to, and will always have its default value 0
+7: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(17,23): warning CS0649: Field 'FirstPersonController.m_WalkSpeed' is never assigned to, and will always have its default value 0
+8: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(28,23): warning CS0649: Field 'FirstPersonController.m_GravityMultiplier' is never assigned to, and will always have its default value 0
+9: Assets\Standard Assets\Utility\PlatformSpecificContent.cs(21,51): warning CS0649: Field 'PlatformSpecificContent.m_BuildTargetGroup' is never assigned to, and will always have its default value
+10: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(48,27): warning CS0649: Field 'FirstPersonController.m_LandSound' is never assigned to, and will always have its default value null
+11: Assets\Standard Assets\Utility\SmoothFollow.cs(19,17): warning CS0649: Field 'SmoothFollow.rotationDamping' is never assigned to, and will always have its default value 0
+12: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(22,23): warning CS0649: Field 'FirstPersonController.m_RunstepLenghten' is never assigned to, and will always have its default value 0
+13: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(36,22): warning CS0649: Field 'FirstPersonController.m_UseHeadBob' is never assigned to, and will always have its default value false
+14: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(42,23): warning CS0649: Field 'FirstPersonController.m_StepInterval' is never assigned to, and will always have its default value 0
+15: Assets\Standard Assets\Utility\SmoothFollow.cs(21,17): warning CS0649: Field 'SmoothFollow.heightDamping' is never assigned to, and will always have its default value 0
+16: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(44,29): warning CS0649: Field 'FirstPersonController.m_FootstepSounds' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-firstpass.dll
+Elapsed time: 0.46 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Tuesday, November 10, 2015 6:33:44 PM                     *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\toyuk\Documents\京大\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-96fd7c66e8cae8c46bf7a3d8f8074806
+Exit code: 0
+Elapsed time: 0.58 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+10: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.47 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Tuesday, November 10, 2015 6:33:45 PM                     *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\toyuk\Documents\京大\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-5e1a4f9abcf119448a67824818706357
+Exit code: 0
+Elapsed time: 0.44 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.57 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Tuesday, November 10, 2015 6:34:43 PM                     *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\toyuk\Documents\京大\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-8ad957ac3a6e8d046868678daaf7f653
+Exit code: 0
+Elapsed time: 0.91 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.54 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Tuesday, November 10, 2015 6:34:45 PM                     *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\toyuk\Documents\京大\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-6989208c30c68f441a57e076b26b221e
+Exit code: 0
+Elapsed time: 0.49 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\toyuk\Documents\京大\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.49 sec
+
+- pdb2mdb.exe output:
+

@@ -306,7 +306,11 @@ namespace EnvironmentMaker {
 
     static class ColorExtension {
         public static float Length(this Color color) {
-            return Mathf.Sqrt(color.r * color.r + color.g * color.g + color.b * color.b);
+            return Mathf.Sqrt(color.SqrLength());
+        }
+
+        public static float SqrLength(this Color color) {
+            return color.r * color.r + color.g * color.g + color.b * color.b;
         }
     }
     struct Vector {
