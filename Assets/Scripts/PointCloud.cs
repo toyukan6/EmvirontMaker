@@ -17,7 +17,6 @@ namespace EnvironmentMaker {
         List<Color[][]> walkColors;
         List<Vector3> walkHeadPos;
         List<Vector3> bodyposes;
-        bool walk = true;
         int kinectNums = 4;
 
         private Mesh mesh;
@@ -47,9 +46,6 @@ namespace EnvironmentMaker {
         }
 
         void Update() {
-            if (Input.GetKeyDown(KeyCode.Space)) {
-                walk = !walk;
-            }
         }
 
         void FixedUpdate() {
@@ -62,13 +58,18 @@ namespace EnvironmentMaker {
             var time = Time.deltaTime * 1000;
             for (int i = 0; i < kinectNums; i++) {
                 beforeTime[i] += (int)Math.Floor(time);
-                if (beforeTime[i] > fileTimes[pointsNumbers[i] + 1][i].GetMilli() - fileTimes[pointsNumbers[i]][i].GetMilli())
+                var timeDiff = fileTimes[(pointsNumbers[i] + 1) % fileTimes.Count][i].GetMilli() - fileTimes[pointsNumbers[i]][i].GetMilli();
+                if (beforeTime[i] > timeDiff)
                     pointsNumbers[i] = (pointsNumbers[i] + 1) % walkPoints.Count;
-                foreach (var v in walkPoints[pointsNumbers[i]][i]) {
-                    points.Add(v);
-                }
-                foreach (var c in walkColors[pointsNumbers[i]][i]) {
-                    colors.Add(c);
+                try {
+                    foreach (var v in walkPoints[pointsNumbers[i]][i]) {
+                        points.Add(v);
+                    }
+                    foreach (var c in walkColors[pointsNumbers[i]][i]) {
+                        colors.Add(c);
+                    }
+                } catch (ArgumentOutOfRangeException e) {
+                    print(e.Message);
                 }
             }
             mesh.vertices = points.ToArray();
@@ -79,7 +80,7 @@ namespace EnvironmentMaker {
         void LoadModels(string dir) {
             string baseDir = Path.Combine("polygons", dir);
             int num = 1;
-            while (File.Exists(Path.Combine(baseDir, "model_" + num + "_0.ply"))) {
+            while (File.Exists(Path.Combine(baseDir, $"model_{num}_0.ply"))) {
                 num++;
             }
             Vector3[][][] tmpPoints = new Vector3[num][][];
@@ -88,7 +89,7 @@ namespace EnvironmentMaker {
                 var pointlist = new List<Point>[kinectNums];
                 for (int i = 0; i < kinectNums; i++) {
                     var plist = new List<Point>();
-                    var fileName = Path.Combine(baseDir, "model_" + n + "_" + i + ".ply");
+                    var fileName = Path.Combine(baseDir, $"model_{n}_{i}.ply");
                     foreach (var p in reader.Load(fileName)) {
                         plist.Add(p);
                     }
@@ -99,9 +100,12 @@ namespace EnvironmentMaker {
                         }
                         var sourceBorder = BorderPoints(source);
                         var destBorder = BorderPoints(plist);
-                        float diff = (float)CalcY(sourceBorder, destBorder);
-                        if (diff < 0.2) {
-                            plist = plist.Select(p => p - new Vector3(0, diff, 0)).ToList();
+                        //var sourceLine = CalcLine(SelectPoint(plist, source));
+                        //var destLine = CalcLine(SelectPoint(source, plist));
+                        float diffY = (float)CalcY(sourceBorder, destBorder);
+                        //var diffXZ = CalcXZ(sourceLine, destLine);
+                        if (diffY < 0.2) {
+                            plist = plist.Select(p => p - new Vector3(0, diffY, 0)).ToList();
                         }
                     }
 
@@ -203,6 +207,48 @@ namespace EnvironmentMaker {
             return border;
         }
 
+        List<Point> SelectPoint(List<Point> source, List<Point> dest) {
+            var select = new List<Point>();
+            var minX = source.Min(s => s.X);
+            var maxX = source.Max(s => s.X);
+            var minZ = source.Min(s => s.Z);
+            var maxZ = source.Max(s => s.Z);
+            foreach (var d in dest) {
+                if (d.X >= minX && d.X <= maxX && d.Z >= minZ && d.Z <= maxZ) {
+                    select.Add(d);
+                }
+            }
+            return select;
+        }
+
+        List<XZLine> CalcLine(List<Point> points) {
+            var tmp = new List<Point>();
+            foreach (var p in points) {
+                tmp.Add(p);
+            }
+            tmp.Sort((t1, t2) => Math.Sign(t1.GetVector3().sqrMagnitude - t2.GetVector3().sqrMagnitude));
+            var lines = new List<XZLine>();
+            int i = 0;
+            while (tmp.Count > i) {
+                var v = tmp[i];
+                double num = 0.1;
+                var near = tmp.FindAll(t => (t.GetVector3() - v.GetVector3()).sqrMagnitude < num * num);
+                i += near.Count;
+                var line = LeastSquareMethod(near);
+                lines.Add(line);
+            }
+            return lines;
+        }
+
+        XZLine LeastSquareMethod(List<Point> points) {
+            var data = new List<Vector2>();
+            foreach (var p in points) {
+                var vec = p.GetVector3();
+                data.Add(new Vector2(vec.x, vec.z));
+            }
+            return XZLine.LeastSquareMethod(data);
+        }
+
         double CalcY(List<List<Point>> source, List<List<Point>> destination) {
             var diffs = new List<double>();
             Func<List<Point>, List<Point>, double> f = (p1, p2) =>
@@ -218,6 +264,62 @@ namespace EnvironmentMaker {
             }
 
             return diffs.Median();
+        }
+
+        Vector2 CalcXZ(List<XZLine> source, List<XZLine> dest) {
+            double[] mins = new double[source.Count];
+            for (int i = 0; i < source.Count; i++) {
+                mins[i] = dest.Min(d => Math.Abs(d.A - source[i].A));
+            }
+            var minimum = mins.Min();
+            var index = Array.FindIndex(mins, m => m == minimum);
+            XZLine sourceLine = source[index];
+            XZLine destLine = dest.Find(d => d.A - sourceLine.A - minimum < 0.0000001);
+            Vector2 destNormal = new Vector2((float)destLine.A, -1).normalized;
+            var vecs = destLine.Vectors;
+            var dists = vecs.Select(v => sourceLine.CalcDistance(v));
+            return (float)dists.Average() * destNormal;
+        }
+    }
+
+    class XZLine {
+        public double A { get; private set; }
+        public double B { get; private set; }
+        public List<Vector2> Vectors { get; private set; }
+        public XZLine(double a, double b, List<Vector2> vectors) {
+            A = a;
+            B = b;
+            Vectors = vectors;
+        }
+
+        public XZLine(double a, double b)
+            : this(a, b, new List<Vector2>()) {
+        }
+
+        public double Calc(double x, double z) {
+            return A * x - z + B;
+        }
+
+        public double Calc(Vector2 vec) {
+            return Calc(vec.x, vec.y);
+        }
+
+        public static XZLine LeastSquareMethod(List<Vector2> vectors) {
+            double a, b;
+            double sumX = vectors.Sum(v => v.x), sumY = vectors.Sum(v => v.y),
+                sumXY = vectors.Sum(v => v.x * v.y), sumXX = vectors.Sum(v => v.x * v.x);
+            int n = vectors.Count;
+            a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            b = (sumXX * sumY - sumX * sumXY) / (n * sumXX - sumX * sumX);
+            return new XZLine(a, b, vectors);
+        }
+
+        public double CalcDistance(Vector2 vector) {
+            return Math.Abs(Calc(vector)) / Math.Sqrt(A * A + 1);
+        }
+
+        public override string ToString() {
+            return $"z = {A}x + {B}";
         }
     }
 }
