@@ -1,0 +1,1001 @@
+********************************************************************************
+*                    Thursday, November 12, 2015 5:08:53 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-e6d28b7b0ec2d1749b160845e7b34710
+Exit code: 0
+Elapsed time: 0.62 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+10: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:08:55 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-fe2d7fa03e4129a40a8ca3ab3deb117d
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:11:11 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-e13acb3df5b58ce4da567bdc2ce614b0
+Exit code: 0
+Elapsed time: 0.64 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:11:13 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-3a9fd706f5a286747ae6f511346af1a6
+Exit code: 0
+Elapsed time: 0.45 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:13:18 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-2e0731fdb33f6cd41866e1954efc8777
+Exit code: 0
+Elapsed time: 0.60 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+14: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:13:20 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-14f769395b0a95549a04fa412da6eda3
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:17:07 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-d54cd136facaaac44ac65de45038e93d
+Exit code: 0
+Elapsed time: 0.61 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:17:08 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-1e649339cfe0a9a4e8cce5b26ed06449
+Exit code: 0
+Elapsed time: 0.42 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:19:33 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-cdafa469bdc475149ae79ee0c748237c
+Exit code: 0
+Elapsed time: 0.60 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+13: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:19:34 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-0ca838ab05c1adc49bc5a606280c2989
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:21:39 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-c051163178d23bf42aa48b40b13ae485
+Exit code: 0
+Elapsed time: 0.60 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+14: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:21:41 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-cc618febec3c9d74e9880a72a2e363ff
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:24:54 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-7edf79e737e739949bff7692ccea3657
+Exit code: 0
+Elapsed time: 0.62 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+10: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:24:55 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-84efd7beec28e4343822f67e0220d1b8
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:26:36 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-e156b24f7cd40dc4496c6de800db520f
+Exit code: 0
+Elapsed time: 0.61 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+10: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:26:37 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-fea2c21b68412e84f9eb734e53551ee0
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:29:30 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-f38a48b24bc8f23418b007b4a2728d8d
+Exit code: 0
+Elapsed time: 0.61 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:29:31 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-c85541cbb5678854581d55fbfc3ecf9f
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:33:16 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-d1f1438a27aed48408d417f76b8399f1
+Exit code: 0
+Elapsed time: 0.62 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.15 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:33:17 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-3e12d1240de337849bf769152e9758fa
+Exit code: 0
+Elapsed time: 0.45 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:36:28 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-7467d815133580f44827b2dc071f239d
+Exit code: 0
+Elapsed time: 0.62 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:36:29 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-8917c083d8eb4a949b48fd9bdc9ed632
+Exit code: 0
+Elapsed time: 0.44 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:38:50 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-4b270a5ee09efc143ada0c8b974191b4
+Exit code: 0
+Elapsed time: 0.65 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:38:51 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-fc68fa89c5400bc4880616ef017a6817
+Exit code: 0
+Elapsed time: 0.47 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.13 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:41:59 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-bc778f7de2f948a42abdc607da1742f2
+Exit code: 0
+Elapsed time: 0.62 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
+9: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+10: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+11: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
+13: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+14: Assets\Scripts\PointCloud.cs(19,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Thursday, November 12, 2015 5:42:00 PM                    *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-9987fd0cb5f352f48912aabc1c7e30d9
+Exit code: 0
+Elapsed time: 0.43 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.14 sec
+
+- pdb2mdb.exe output:
+

@@ -64,12 +64,24 @@ namespace EnvironmentMaker {
             Blue = b;
         }
 
+        public Point(Vector3 vec, Color color) 
+            : this(vec.x * CORRECTION, vec.y * CORRECTION, vec.z * CORRECTION, (byte)(color.r * 255), (byte)(color.g * 255), (byte)(color.b * 255)) {
+            
+        }
+
+        const int CORRECTION = 1000;
+
         public Vector3 GetVector3() {
-            return new Vector3(X, Y, Z) * 0.001f;
+            return new Vector3(X, Y, Z) / CORRECTION;
         }
 
         public Color GetColor() {
             return new Color(Red / (float)byte.MaxValue, Green / (float)byte.MaxValue, Blue / (float)byte.MaxValue, 1);
+        }
+
+        public static Point operator -(Point p, Vector3 vec) {
+            vec *= CORRECTION;
+            return new Point(p.X - vec.x, p.Y - vec.y, p.Z - vec.z, p.Red, p.Green, p.Blue);
         }
     }
 }
