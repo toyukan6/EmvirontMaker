@@ -91,15 +91,8 @@ namespace EnvironmentMaker {
                         vlist.AddLast(p.GetVector3());
                         clist.AddLast(p.GetColor());
                     }
-                    //var slice = RoundSlices(vlist);
                     vllist[i] = vlist;
                     cllist[i] = clist;
-                    //foreach (var v in vlist) {
-                    //    vecs.AddFirst(v + new Vector3(0, minY - minListY, 0));
-                    //}
-                    //foreach (var c in clist) {
-                    //    cols.AddFirst(c);
-                    //}
                 }
                 Vector3[][] varray = new Vector3[dotNums][];
                 Color[][] carray = new Color[dotNums][];
@@ -162,6 +155,25 @@ namespace EnvironmentMaker {
             }
         }
 
-        void HeadSearch(List<Vector3> vecs) {        }
+        void HeadSearch(List<Vector3> vecs) { }
+
+        List<Vector3> BorderVectors(List<Vector3> vecs) {
+            var borders = new List<Vector3>();
+            var maxX = vecs.Max(v => v.x);
+            var maxY = vecs.Max(v => v.y);
+            var maxZ = vecs.Max(v => v.z);
+            var minX = vecs.Min(v => v.x);
+            var minY = vecs.Min(v => v.y);
+            var minZ = vecs.Min(v => v.z);
+            borders.Add(vecs.Find(v => v.x == maxX));
+            borders.Add(vecs.Find(v => v.x == minX));
+            borders.Add(vecs.Find(v => v.y == maxY));
+            borders.Add(vecs.Find(v => v.y == minY));
+            borders.Add(vecs.Find(v => v.z == maxZ));
+            borders.Add(vecs.Find(v => v.z == minZ));
+            foreach (var v in vecs) {
+            }
+            return borders;
+        }
     }
 }
