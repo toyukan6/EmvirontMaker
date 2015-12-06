@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityLib;
 
 namespace EnvironmentMaker {
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
@@ -15,17 +16,22 @@ namespace EnvironmentMaker {
         PlyReader reader;
         List<Vector3[][]> walkPoints;
         List<Color[][]> walkColors;
-        List<Vector3> walkHeadPos;
+        List<Point[]> mergePoints;
         List<Vector3> bodyposes;
         int kinectNums = 4;
         public GameObject Pointer;
-        List<Vector3> estimates = new List<Vector3>();
+        List<GameObject> pointers = new List<GameObject>();
+        Vector3[] estimates;
+        Dictionary<JointType, Vector3>[] partsCorrections;
+        List<Dictionary<JointType, Vector3>> bodyList;
 
         private Mesh mesh;
 
         int[] beforeTime;
         int[] pointsNumbers;
         List<MyTime[]> fileTimes;
+
+        public string DirName = "newpolygons";
 
         // Use this for initialization
         void Start() {
@@ -34,26 +40,31 @@ namespace EnvironmentMaker {
             walkPoints = new List<Vector3[][]>();
             walkColors = new List<Color[][]>();
             fileTimes = new List<MyTime[]>();
-            walkHeadPos = new List<Vector3>();
             beforeTime = new int[kinectNums];
             pointsNumbers = new int[kinectNums];
             for (int i = 0; i < pointsNumbers.Length; i++) {
                 pointsNumbers[i] = 0;
             }
             GetComponent<MeshFilter>().mesh = mesh;
-            string dir = "result";
-            LoadModels(dir);
-            LoadIndexCSV(dir);
+            LoadModels(DirName);
+            LoadIndexCSV(DirName);
+            LoadBodyDump(DirName);
             var array = new int[10];
+            //foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+            //    var obj = Instantiate(Pointer) as GameObject;
+            //    obj.name = Enum.GetName(typeof(JointType), type);
+            //    pointers.Add(obj);
+            //}
         }
 
         void Update() {
         }
 
         void FixedUpdate() {
-            Destroy(GetComponent<MeshFilter>().mesh);
+            var oldMesh = mesh;
             mesh = new Mesh();
             GetComponent<MeshFilter>().mesh = mesh;
+            DestroyImmediate(oldMesh);
 
             var points = new List<Vector3>();
             var colors = new List<Color>();
@@ -70,26 +81,46 @@ namespace EnvironmentMaker {
                 foreach (var c in walkColors[pointsNumbers[i]][i]) {
                     colors.Add(c);
                 }
-                Pointer.transform.position = this.transform.position + estimates[index % estimates.Count];
             }
+            //var positions = new Vector3[pointers.Count];
+            //var thisPos = this.transform.position;
+            //var pn = pointsNumbers[0];
+            //Parallel.ForEach<JointType>(Enum.GetValues(typeof(JointType)).Cast<JointType>(), type => {
+            //    var diff = bodyList[pn][type] - bodyList[pn][(int)JointType.SpineBase];
+            //    var basePos = estimates[pn % estimates.Length] + diff;
+            //    positions[(int)type] = basePos;// ApplyPointerPos(mergePoints[pn].ToList(), basePos, type);
+            //});
+            //for (int i = 0; i < positions.Length; i++) {
+                //if (partsCorrections[pn].ContainsKey((JointType)i)) {
+                //    pointers[i].transform.position =  thisPos + partsCorrections[pn][(JointType)i];
+                //} else {
+                //    pointers[i].transform.position = thisPos + positions[i];
+                //}
+            //    pointers[i].transform.position = thisPos + positions[i];
+            //}
             mesh.vertices = points.ToArray();
             mesh.colors = colors.ToArray();
             mesh.SetIndices(Enumerable.Range(0, points.Count).ToArray(), MeshTopology.Points, 0);
         }
 
         void LoadModels(string dir) {
-            string baseDir = Path.Combine("polygons", dir);
-            int num = 1;
-            while (File.Exists(Path.Combine(baseDir, $"model_{num}_0.ply"))) {
+            string baseDir = $@"polygons\{dir}";
+            int num = 0;
+            while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
                 num++;
             }
-            Vector3[][][] tmpPoints = new Vector3[num][][];
-            Color[][][] tmpColors = new Color[num][][];
+            var tmpPoints = new Vector3[num][][];
+            var tmpColors = new Color[num][][];
+            var points = new Point[num][];
+            estimates = new Vector3[num];
+            partsCorrections = new Dictionary<JointType, Vector3>[num];
+            var completeMerge = new Point[num][];
             Parallel.For(0, num, n => {
                 var pointlist = new List<Point>[kinectNums];
+                var list = new List<Point>();
                 for (int i = 0; i < kinectNums; i++) {
                     var plist = new List<Point>();
-                    var fileName = Path.Combine(baseDir, $"model_{n}_{i}.ply");
+                    var fileName = $@"{baseDir}\model_{n}_{i}.ply";
                     foreach (var p in reader.Load(fileName)) {
                         plist.Add(p);
                     }
@@ -109,21 +140,41 @@ namespace EnvironmentMaker {
                         }
                     }
                     pointlist[i] = plist;
+                    foreach (var p in plist) {
+                        list.Add(p);
+                    }
                 }
+                //ApplyXZ(pointlist);
                 tmpPoints[n] = pointlist.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
                 tmpColors[n] = pointlist.Select(c => c.Select(p => p.GetColor()).ToArray()).ToArray();
+                completeMerge[n] = list.ToArray();
+                int max = (int)Math.Sqrt(list.Count);
+                var tmpList = new List<Point>();
+                var rand = new System.Random();
+                for (int i = 0; i < max; i++) {
+                    var point = list[rand.Next(list.Count)];
+                    tmpList.Add(point);
+                    list.Remove(point);
+                }
+                points[n] = tmpList.ToArray();
             });
             walkPoints = tmpPoints.ToList();
             walkColors = tmpColors.ToList();
-            for (int i = 1; i < walkColors.Count; i++) {
-                EstimateArm(i);
-            }
+            mergePoints = points.ToList();
+            var sborder = BorderPoints(completeMerge[0].ToList());
+            var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
+            var standard = sborder.Find(s => Math.Abs(s.Average(v => v.Y)) == ymed);
+            estimates[0] = Functions.AverageVector(standard.Select(s => s.GetVector3()).ToList());
+            InitPartsCorrection();
+            Parallel.For(1, walkColors.Count, i => {
+                EstimateHip(standard, completeMerge[i].ToList(), i);
+                //CalcPartsCorrection(completeMerge[i].ToList(), i);
+            });
         }
 
         void LoadIndexCSV(string dir) {
-            string baseDir = Path.Combine("polygons", dir);
             List<string[]> data = new List<string[]>();
-            using (StreamReader reader = new StreamReader(Path.Combine(baseDir, "index.csv"))) {
+            using (StreamReader reader = new StreamReader($@"polygons\{dir}\index.csv")) {
                 string str = reader.ReadLine();
                 while(str != null) {
                     var split = str.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
@@ -141,38 +192,44 @@ namespace EnvironmentMaker {
             }
         }
 
-        List<Vector3> EstimateArm(int index) {
-            var source = new List<Point>();
-            var dest = new List<Point>();
-            for (int i = 0; i < kinectNums; i++) {
-                var svecs = walkPoints[0][i];
-                var scols = walkColors[0][i];
-                source.Add(new Point(svecs[0], scols[0]));
-                var dvecs = walkPoints[index][i];
-                var dcols = walkColors[index][i];
-                dest.Add(new Point(dvecs[0], dcols[0]));
-            }
-            var sborder = BorderPoints(source);
+        void LoadBodyDump(string dir) {
+            string filePath = $@"polygons\{dir}\SelectedUserBody.dump";
+            var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
+            this.bodyList = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
+        }
+
+        void EstimateHip(List<Point> standard, List<Point> dest, int index) {
             var dborder = BorderPoints(dest);
-            if (sborder.Count > 0 && dborder.Count > 0) {
-                var standard = sborder[0];
+            if (dborder.Count > 0) {
                 Func<List<Point>, List<Point>, double> f = (p1, p2) =>
     Functions.SubColor(Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()), Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
      + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
 
                 var min = dborder.Min(de => f(standard, de));
-                var target = dborder.Find(d => Math.Abs(f(standard, d) - min) >= 0);
+                var target = dborder.Find(d => Math.Abs(f(standard, d) - min) < 0.0000001);
                 if (target == null && dborder.Count > 0) {
                     dborder.ForEach(d => print(Math.Abs(f(standard, d) - min)));
                 }
                 var vecs = target.Select(t => t.GetVector3()).ToList();
                 var vec = Functions.AverageVector(vecs);
-                estimates.Add(vec);
+                if (Math.Abs(vec.y) < 0.1) {
+                    estimates[index] = vec;
+                } else {
+                    estimates[index] = Functions.AverageVector(dest.Select(s => s.GetVector3()).ToList());
+                }
             } else {
-                estimates.Add(Vector3.zero);
+                estimates[index] = Vector3.zero;
             }
+        }
 
-            return null;
+        void InitPartsCorrection() {
+            for (int i = 0; i < partsCorrections.Length; i++) {
+                partsCorrections[i] = new Dictionary<JointType, Vector3>();
+            }
+        }
+
+        void CalcPartsCorrection(List<Point> points, int index) {
+            Arms(points, index);
         }
 
         MyTime ParseTime(string str) {
@@ -186,8 +243,7 @@ namespace EnvironmentMaker {
         }
 
         void LoadBody(string dir) {
-            string baseDir = Path.Combine("polygons", dir);
-            using (StreamReader reader = new StreamReader(Path.Combine(baseDir, "bodyposes.txt"))) {
+            using (StreamReader reader = new StreamReader($@"polygons\{dir}\bodyposes.txt")) {
                 string str = reader.ReadLine();
                 while(str != null) {
                     var split = str.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
@@ -217,20 +273,19 @@ namespace EnvironmentMaker {
                 }
                 near.Sort((n1, n2) => Math.Sign(n1.GetVector3().sqrMagnitude - n2.GetVector3().sqrMagnitude));
                 if (near.Count > 1) {
-                    var medians = new List<double>();
-                    var tmp2 = new List<Point>();
-                    foreach (var n in near) {
-                        tmp2.Add(n);
-                    }
-                    while(near.Count > 0) {
+                    var lengthes = new List<double>();
+                    var tmp2 = new Point[near.Count];
+                    near.CopyTo(tmp2);
+                    var max = Math.Sqrt(near.Count);
+                    for (int i = 0; i < max && near.Count > 0; i++) {
                         var first = near.First();
                         var last = near.Last();
                         near.Remove(first);
                         near.Remove(last);
-                        medians.Add((first.GetColor() - last.GetColor()).SqrLength());
+                        lengthes.Add((first.GetColor() - last.GetColor()).SqrLength());
                     }
-                    var median = medians.Median();
-                    dictionary.Add(new KeyValuePair<double, List<Point>>(median, tmp2));
+                    var median = lengthes.Median();
+                    dictionary.Add(new KeyValuePair<double, List<Point>>(median, tmp2.ToList()));
                 }
             }
             for (int i = 0; i < dictionary.Count; i++) {
@@ -265,43 +320,90 @@ namespace EnvironmentMaker {
             return select;
         }
 
-        List<XZLine> CalcLine(List<Point> points) {
-            var tmp = new List<Point>();
-            foreach (var p in points) {
-                tmp.Add(p);
+        void ApplyXZ(List<Point>[] points) {
+            var correct = new[] { UpDown.Down, UpDown.Up, UpDown.Down, UpDown.Up };
+            var bayes = new Bayes();
+            var basepoints = new List<Point>();
+            points[0].ForEach(p => basepoints.Add(p));
+            points[3].ForEach(p => basepoints.Add(p));
+            var averageVec = Functions.AverageVector(basepoints.Select(p => p.GetVector3()).ToList());
+            for (int i = 0; i < points.Length; i++) {
+                var border = BorderPoints(points[i]);
+                var minIndex = border.IndexOfMin(s => Math.Abs(s.Average(v => v.Y)));
+                var min = border[minIndex];
+                var vec3s = min.Select(p => p.GetVector3());
+                List<Vector2> bayesResult;
+                if (i > 1) {
+                    bayesResult = bayes.BayesEstimate(vec3s.Select(v => new Vector2(v.z, v.x)).ToList());
+                } else {
+                    bayesResult = bayes.BayesEstimate(vec3s.Select(v => new Vector2(v.x, v.z)).ToList());
+                }
+                var ud = IsUpDown(bayesResult);
+                if (ud != correct[i]) {
+                    var average = Functions.AverageVector(points[i].Select(p => p.GetVector3()).ToList());
+                    var diff = averageVec;
+                    diff = new Vector3(diff.x, 0, diff.z);
+                    for (int j = 0; j < points[i].Count; j++) {
+                        var moved = points[i][j].GetVector3();
+                        moved -= diff;
+                        moved = moved.RotateXZ(Math.PI);
+                        moved += diff;
+                        var color = points[i][j].GetColor();
+                        points[i][j] = new Point(moved, color);
+                    }
+                }
+                //if (i == 1 || i == 2) {
+                //    var vec2s = vec3s.Select(v => new Vector2(v.x, v.z)).ToList();
+                //    List<Vector2> baseVecs;
+                //    int vecIndex, index;
+                //    Vector2 vec, diff, baseVec;
+                //    if (i == 1) {
+                //        var baseBorder = BorderPoints(points[3]);
+                //        var baseMinIndex = baseBorder.IndexOfMin(s => Math.Abs(s.Average(v => v.Y)));
+                //        var baseMin = baseBorder[baseMinIndex];
+                //        baseVecs = baseMin.Select(p => p.GetVector3()).Select(v => new Vector2(v.x, v.z)).ToList();
+                //        index = baseVecs.IndexOfMax(b => b.y);
+                //        vecIndex = vec2s.IndexOfMax(b => b.y);
+                //    } else {
+                //        var baseBorder = BorderPoints(points[0]);
+                //        var baseMinIndex = baseBorder.IndexOfMin(s => Math.Abs(s.Average(v => v.Y)));
+                //        var baseMin = baseBorder[baseMinIndex];
+                //        baseVecs = baseMin.Select(p => p.GetVector3()).Select(v => new Vector2(v.x, v.z)).ToList();
+                //        index = baseVecs.IndexOfMin(b => b.y);
+                //        vecIndex = vec2s.IndexOfMin(b => b.y);
+                //    }
+                //    baseVec = baseVecs[index];
+                //    vec = vec2s[vecIndex];
+                //    diff = vec - baseVec;
+                //    for (int j = 0; j < points[i].Count; j++) {
+                //        points[i][j] -= new Vector3(diff.x, 0, diff.y);
+                //    }
+                //}
             }
-            tmp.Sort((t1, t2) => Math.Sign(t1.GetVector3().sqrMagnitude - t2.GetVector3().sqrMagnitude));
-            var lines = new List<XZLine>();
-            int i = 0;
-            while (tmp.Count > i) {
-                var v = tmp[i];
-                double num = 0.1;
-                var near = tmp.FindAll(t => (t.GetVector3() - v.GetVector3()).sqrMagnitude < num * num);
-                i += near.Count;
-                var line = LeastSquareMethod(near);
-                lines.Add(line);
-            }
-            return lines;
         }
 
-        XZLine LeastSquareMethod(List<Point> points) {
-            var data = new List<Vector2>();
-            foreach (var p in points) {
-                var vec = p.GetVector3();
-                data.Add(new Vector2(vec.x, vec.z));
+        UpDown IsUpDown(List<Vector2> result) {
+            var first = result.First();
+            var last = result.Last();
+            var average = (first + last) / 2;
+            var bayesY = result[result.Count / 2].y;
+            if (average.y < bayesY) {
+                return UpDown.Up;
+            } else if (average.y > bayesY) {
+                return UpDown.Down;
+            } else {
+                return UpDown.Equal;
             }
-            return XZLine.LeastSquareMethod(data);
         }
 
         double CalcY(List<List<Point>> source, List<List<Point>> destination) {
             var diffs = new List<double>();
             Func<List<Point>, List<Point>, double> f = (p1, p2) =>
-                Functions.SubColor(Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()), Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
+                (Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()) - Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
                  + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
             for (int i = 0; i < source.Count; i++) {
                 var spoints = source[i];
-                var min = destination.Min(b => f(b, spoints));
-                var index = destination.FindIndex(b => f(b, spoints) == min);
+                var index = destination.IndexOfMin(b => f(b, spoints));
                 var dpoints = destination[index];
                 var diff = Functions.AverageVector(dpoints.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(spoints.Select(s => s.GetVector3()).ToList());
                 diffs.Add(diff.y);
@@ -310,60 +412,217 @@ namespace EnvironmentMaker {
             return diffs.Median();
         }
 
-        Vector2 CalcXZ(List<XZLine> source, List<XZLine> dest) {
-            double[] mins = new double[source.Count];
-            for (int i = 0; i < source.Count; i++) {
-                mins[i] = dest.Min(d => Math.Abs(d.A - source[i].A));
+        Vector3 ApplyPointerPos(List<Point> points, Vector3 position, JointType joint) {
+            string jointName = Enum.GetName(typeof(JointType), joint);
+            var list = points.FindAll(l => Math.Abs(position.y - l.GetVector3().y) < 0.8);
+            var medianXZ = list.Median(l => l.X + l.Z);
+            double number = 0.8;
+            var beforePoint = position;
+            if (jointName.Contains("Right")) {
+                switch (joint) {
+                    case JointType.ShoulderRight:
+                    case JointType.ElbowRight:
+                    case JointType.WristRight:
+                    case JointType.HandTipRight:
+                    case JointType.ThumbRight:
+                    case JointType.HandRight: number = 0.1; break;
+                    case JointType.HipRight:
+                    case JointType.KneeRight:
+                    case JointType.AnkleRight:
+                    case JointType.FootRight:
+                    default: break;
+                }
+                var tmp = list.FindAll(l => l.X + l.Z < medianXZ);
+                var point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
+                while((point - beforePoint).sqrMagnitude > number * number) {
+                    beforePoint = point; 
+                    tmp = tmp.FindAll(l => l.GetVector3().x <= point.x && l.GetVector3().z <= point.z);
+                    if (tmp.Count == 0) break;
+                    point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
+                }
+                return new Vector3(point.x, position.y, point.z);
+            } else if (jointName.Contains("Left")) {
+                switch (joint) {
+                    case JointType.ShoulderLeft:
+                    case JointType.ElbowLeft:
+                    case JointType.WristLeft:
+                    case JointType.HandTipLeft:
+                    case JointType.ThumbLeft:
+                    case JointType.HandLeft: number = 0.1; break;
+                    case JointType.HipLeft:
+                    case JointType.KneeLeft:
+                    case JointType.AnkleLeft:
+                    case JointType.FootLeft:
+                    default: break;
+                }
+                var tmp = list.FindAll(l => l.X + l.Z > medianXZ);
+                var point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
+                while ((point - beforePoint).sqrMagnitude > number * number) {
+                    beforePoint = point;
+                    tmp = tmp.FindAll(l => l.GetVector3().x >= point.x && l.GetVector3().z >= point.z);
+                    if (tmp.Count == 0) break;
+                    point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
+                }
+                return new Vector3(point.x, position.y, point.z);
+            } else {
+                return position;
             }
-            var minimum = mins.Min();
-            var index = Array.FindIndex(mins, m => m == minimum);
-            XZLine sourceLine = source[index];
-            XZLine destLine = dest.Find(d => d.A - sourceLine.A - minimum < 0.0000001);
-            Vector2 destNormal = new Vector2((float)destLine.A, -1).normalized;
-            var vecs = destLine.Vectors;
-            var dists = vecs.Select(v => sourceLine.CalcDistance(v));
-            return (float)dists.Average() * destNormal;
+        }
+
+        Vector3 ShoulderPoint(List<Point> points) {
+            var average = points.Average(r => r.Y);
+            var upper = points.FindAll(r => r.Y > average);
+            for (int i = 0; i < 2  && upper.Count > 10; i++) {
+                average = upper.Average(r => r.Y);
+                upper = upper.FindAll(r => r.Y > average);
+            }
+            return Functions.AverageVector(upper.Select(s => s.GetVector3()).ToList());
+        }
+
+        void Arms(List<Point> points, int index) {
+            var rightArm = new List<Point>();
+            var leftArm = new List<Point>();
+            var line = LeastSquareMethod(points.ToList());
+            float minX = points.Min(p => p.GetVector3().x);
+            float maxX = points.Max(p => p.GetVector3().x);
+            var minVec = new Vector2(minX, line.CalcY(minX));
+            var vecs = new List<Point>();
+            foreach (var p in points) {
+                vecs.Add(p);
+            }
+            var lists = new List<List<Point>>();
+            var delta = 0.04;
+            double length = delta;
+            while (vecs.Count > 0) {
+                var tmp = vecs.FindAll(v => (v.GetXZVector() - minVec).sqrMagnitude < length * length).ToList();
+                tmp.ForEach(t => vecs.Remove(t));
+                if (tmp.Count > 0) {
+                    lists.Add(tmp);
+                }
+                length += delta;
+            }
+            bool right = true;
+            foreach (var l in lists) {
+                var averageY = l.Average(p => p.Y);
+                var varianceY = l.Average(p => Math.Pow(p.Y - averageY, 2));
+                if (varianceY < 100000) {
+                    if (right)
+                        l.ForEach(p => rightArm.Add(p));
+                    else
+                        l.ForEach(p => leftArm.Add(p));
+                } else {
+                    right = false;
+                }
+            }
+
+            if (rightArm.Count > 0)
+                partsCorrections[index][JointType.ShoulderRight] = ShoulderPoint(rightArm);
+            if (leftArm.Count > 0)
+                partsCorrections[index][JointType.ShoulderLeft] = ShoulderPoint(leftArm);
+
+            var rightXZ = rightArm.Select(r => new Vector2(r.X, r.Z)).ToList();
+            var rightXY = rightArm.Select(r => new Vector2(r.X, r.Y)).ToList();
+            var rightXZLine = TwoDLine.LeastSquareMethod(rightXZ);
+            var rightXYLine = TwoDLine.LeastSquareMethod(rightXY);
+            var direction = Functions.CrossProduct(new Vector3((float)rightXZLine.A, 0, -1), new Vector3((float)rightXYLine.A, -1, 0));
+            print(direction);
+        }
+
+        TwoDLine LeastSquareMethod(List<Point> points) {
+            var data = new List<Vector2>();
+            foreach (var p in points) {
+                var vec = p.GetVector3();
+                data.Add(new Vector2(vec.x, vec.z));
+            }
+            return TwoDLine.LeastSquareMethod(data);
         }
     }
 
-    class XZLine {
+    class TwoDLine {
         public double A { get; private set; }
         public double B { get; private set; }
         public List<Vector2> Vectors { get; private set; }
-        public XZLine(double a, double b, List<Vector2> vectors) {
+        public TwoDLine(double a, double b, List<Vector2> vectors) {
             A = a;
             B = b;
             Vectors = vectors;
         }
 
-        public XZLine(double a, double b)
+        public TwoDLine(double a, double b)
             : this(a, b, new List<Vector2>()) {
         }
 
-        public double Calc(double x, double z) {
-            return A * x - z + B;
+        public double Calc(double x, double y) {
+            return A * x - y + B;
+        }
+
+        public float CalcY(double x) {
+            return (float)(A * x + B);
         }
 
         public double Calc(Vector2 vec) {
             return Calc(vec.x, vec.y);
         }
 
-        public static XZLine LeastSquareMethod(List<Vector2> vectors) {
+        public static TwoDLine LeastSquareMethod(List<Vector2> vectors) {
             double a, b;
             double sumX = vectors.Sum(v => v.x), sumY = vectors.Sum(v => v.y),
                 sumXY = vectors.Sum(v => v.x * v.y), sumXX = vectors.Sum(v => v.x * v.x);
             int n = vectors.Count;
             a = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
             b = (sumXX * sumY - sumX * sumXY) / (n * sumXX - sumX * sumX);
-            return new XZLine(a, b, vectors);
-        }
-
-        public double CalcDistance(Vector2 vector) {
-            return Math.Abs(Calc(vector)) / Math.Sqrt(A * A + 1);
+            return new TwoDLine(a, b, vectors);
         }
 
         public override string ToString() {
-            return $"z = {A}x + {B}";
+            return "z = " + A + "x + " + B;
         }
+    }
+
+    static class IListExtension {
+        public static int IndexOfMax<T>(this IList<T> list, Func<T, double> predicate) {
+            double maxValue = double.MinValue;
+            int maxIndex = -1;
+            for (int i = 0; i < list.Count; i++) {
+                var value = predicate(list[i]);
+                if (value > maxValue) {
+                    maxValue = value;
+                    maxIndex = i;
+                }
+            }
+            return maxIndex;
+        }
+
+        public static int IndexOfMin<T>(this IList<T> list, Func<T, double> predicate) {
+            double minValue = double.MaxValue;
+            int minIndex = -1;
+            for (int i = 0; i < list.Count; i++) {
+                var value = predicate(list[i]);
+                if (value < minValue) {
+                    minValue = value;
+                    minIndex = i;
+                }
+            }
+            return minIndex;
+        }
+
+        public static double Median<T>(this IList<T> lists, Func<T, double> selector) {
+            var list = lists.Select(p => selector(p)).ToList();
+            return list.Median();
+        }
+    }
+
+    static class Vector3Extension {
+        public static Vector3 RotateXZ(this Vector3 vector, double theta) {
+            var rotateX = Math.Cos(theta) * vector.x - Math.Sin(theta) * vector.z;
+            var rotateZ = Math.Sin(theta) * vector.x + Math.Cos(theta) * vector.z;
+            return new Vector3((float)rotateX, vector.y, (float)rotateZ);
+        }
+    }
+
+    enum UpDown {
+        Up,
+        Down,
+        Equal
     }
 }

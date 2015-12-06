@@ -4,19 +4,44 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using MathNet.Numerics.Statistics;
 
 namespace EnvironmentMaker {
     class PlyReader {
-        
+        Dictionary<double, double[]> ts;
 
         public PlyReader() {
-
+            ts = new Dictionary<double, double[]>();
+            double[] alphas = null;
+            List<double>[] values = null;
+            using (StreamReader reader = new StreamReader("grubbs.txt")) {
+                string str = reader.ReadLine();
+                while (str != null) {
+                    var split = str.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+                    if (alphas == null) {
+                        alphas = new double[split.Length];
+                        values = new List<double>[split.Length];
+                        for (int i = 0; i < split.Length; i++) {
+                            alphas[i] = double.Parse(split[i]);
+                            values[i] = new List<double>();
+                        }
+                    } else {
+                        for (int i = 1; i < split.Length; i++) {
+                            values[i - 1].Add(double.Parse(split[i]));
+                        }
+                    }
+                    str = reader.ReadLine();
+                }
+            }
+            for (int i = 0; i < alphas.Length; i++) {
+                ts.Add(alphas[i], values[i].ToArray());
+            }
         }
 
         public Point[] Load(string path) {
-            Point[] points;
+            var points = new List<Point>();
             int pointsNumber = 0;
-            using(StreamReader reader = new StreamReader(path)) {
+            using (StreamReader reader = new StreamReader(path)) {
                 string str = reader.ReadLine();
                 if (str != "ply") return null;
                 while (str != null) {
@@ -29,13 +54,31 @@ namespace EnvironmentMaker {
                     str = reader.ReadLine();
                 }
                 str = reader.ReadLine();
-                points = new Point[pointsNumber];
                 for (int i = 0; i < pointsNumber; i++) {
                     string data = reader.ReadLine();
-                    points[i] = MakePoint(data);
+                    points.Add(MakePoint(data));
                 }
             }
-            return points;
+            RemoveOutlier(points, p => p.GetVector3().sqrMagnitude);
+            return points.ToArray();
+        }
+
+        private void RemoveOutlier(List<Point> points, Func<Point, double> function) {
+            var lengthes = points.Select(p => function(p)).ToList();
+            var average = lengthes.Average();
+            var variance = lengthes.Average(l => Math.Pow(l - average, 2));
+            var deviation = Math.Sqrt(variance);
+            double alpha = 0.01;
+            var response = ts[alpha][points.Count - 1];
+            var upper = average + deviation * Math.Sqrt((points.Count + 1.0) / points.Count) * response;
+            var lower = average - deviation * Math.Sqrt((points.Count + 1.0) / points.Count) * response;
+            var removes = new List<Point>();
+            for (int i = 0; i < points.Count; i++) {
+                if (lengthes[i] < lower || lengthes[i] > upper) {
+                    removes.Add(points[i]);
+                }
+            }
+            removes.ForEach(r => points.Remove(r));
         }
 
         public Point MakePoint(string data) {
@@ -75,13 +118,31 @@ namespace EnvironmentMaker {
             return new Vector3(X, Y, Z) / CORRECTION;
         }
 
+        public Vector2 GetXZVector() {
+            return new Vector2(X, Z) / CORRECTION;
+        }
+
         public Color GetColor() {
             return new Color(Red / (float)byte.MaxValue, Green / (float)byte.MaxValue, Blue / (float)byte.MaxValue, 1);
+        }
+
+        public static Point operator +(Point p, Vector3 vec) {
+            vec *= CORRECTION;
+            return new Point(p.X + vec.x, p.Y + vec.y, p.Z + vec.z, p.Red, p.Green, p.Blue);
         }
 
         public static Point operator -(Point p, Vector3 vec) {
             vec *= CORRECTION;
             return new Point(p.X - vec.x, p.Y - vec.y, p.Z - vec.z, p.Red, p.Green, p.Blue);
+        }
+
+        public override string ToString() => $"Vector:({X}, {Y}, {Z}) Color:({Red}, {Green}, {Blue})";
+    }
+
+    static class ListExtension {
+        public static double Median<T>(this List<T> lists, Func<T, double> selector) {
+            var list = lists.Select(p => selector(p)).ToList();
+            return list.Median();
         }
     }
 }

@@ -6,6 +6,10 @@ using UnityEngine;
 
 namespace EnvironmentMaker {
     static class Functions {
+        static System.Random rand = new System.Random();
+
+        public static int GetRandomInt(int max) => rand.Next(max);
+
         public static List<T3> ZipWith<T1, T2, T3>(List<T1> list1, List<T2> list2, Func<T1, T2, T3> func) {
             var result = new List<T3>();
             int max = Math.Min(list1.Count, list2.Count);
@@ -55,6 +59,10 @@ namespace EnvironmentMaker {
             } else {
                 return new Color(0, 0, 0, 0);
             }
+        }
+
+        public static Vector3 CrossProduct(Vector3 v1, Vector3 v2) {
+            return new Vector3(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y - v2.x);
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 using UnityLib;
 
 public class Test : MonoBehaviour {
-    string filePath = @"C:\Users\higuchi\Documents\修_120331\京都大学工学部履修120404\卒研\SelectedUserBody\SelectedUserBody.dump";
+    string filePath = @"polygons\result\SelectedUserBody.dump";
     //string timeDataPath = @"C:\Users\yoshino\Desktop\Data\Filtered\Student23TimeData.dump";
     List<Dictionary<int, float[]>> bodyList;
     List<DateTime> timeStamps;

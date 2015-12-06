@@ -128,9 +128,17 @@ namespace EnvironmentMaker {
         /// </summary>
         public GameObject Ground;
         /// <summary>
+        /// 地面のテクスチャ
+        /// </summary>
+        private Texture2D groundTexture;
+        /// <summary>
         /// スプライトの色
         /// </summary>
         private Color spriteColor = Color.white;
+        /// <summary>
+        /// 点群表示用
+        /// </summary>
+        public GameObject PointCloudPrehab;
         #endregion
 
         #region 歩行モード
@@ -175,7 +183,9 @@ namespace EnvironmentMaker {
             }
         }
 
-        private void EditModeUpdate() {
+        int waitFrame = 0;
+
+        private Vector3 GetScreenPos(Vector3 basePos) {
             var pos = Input.mousePosition - new Vector3(Screen.width, Screen.height, 0) / 2;
             var screenPos = Camera.main.ScreenToViewportPoint(pos);
             var worldPos = Camera.main.ScreenToWorldPoint(pos);
@@ -183,6 +193,11 @@ namespace EnvironmentMaker {
             screenPos *= 12;
             screenPos += worldPos;
             screenPos.y = 0;
+            return screenPos;
+        }
+
+        private void EditModeUpdate() {
+            var screenPos = GetScreenPos(Input.mousePosition);
             if (Input.GetMouseButtonDown(0)) {
                 if (BetweenScreenPos(editArea)) {
                     var trect = textureRects.Find(t => Between(t, screenPos));
@@ -190,6 +205,7 @@ namespace EnvironmentMaker {
                         ChangeSelectedObject(null);
                         var srender = Cursor.GetComponent<SpriteRenderer>();
                         var obj = CreateSpriteObject(screenPos, srender.sprite);
+                        srender.sprite = null;
                         undoAct = () => DeleteTexture(obj);
                     } else {
                         int index = textureRects.IndexOf(trect);
@@ -198,6 +214,7 @@ namespace EnvironmentMaker {
                             ChangeSelectedObject(index);
                             clickedPosition = screenPos;
                             firstPosition = selectedObject.transform.position;
+                            waitFrame = 20;
                         } else {
                             var selectedSprite = selectedObject.GetComponent<SpriteRenderer>().sprite;
                             var selectedSize = selectedSprite.bounds.size;
@@ -207,6 +224,11 @@ namespace EnvironmentMaker {
                             var obj = Instantiate(selectedObject, newPosition, Quaternion.identity) as GameObject;
                             var bill = obj.GetComponent<BillBoard>();
                             bill.SetPlayer(this.gameObject);
+                            if (fixing) {
+                                bill.enabled = false;
+                                var angles = obj.transform.localEulerAngles;
+                                obj.transform.localEulerAngles = new Vector3(angles.x, (float)degree, angles.z);
+                            }
                             var position = selectedObject.transform.position;
                             Action act = () => {
                                 Destroy(obj.gameObject);
@@ -222,9 +244,15 @@ namespace EnvironmentMaker {
                     var srender = Cursor.GetComponent<SpriteRenderer>();
                     if (index >= 0 && index < textures.Count) {
                         var texture = textures[index];
+                        var size = new Vector2(texture.width, texture.height);
                         srender.sprite = Texture2DToSprite(texture);
                         ChangeSelectedObject(null);
                     }
+                }
+            } else if (!Input.GetMouseButton(0)) {
+                waitFrame--;
+                if (waitFrame < 0) {
+                    ChangeSelectedObject(null);
                 }
             }
             if (Input.GetMouseButton(0) && clickedPosition.HasValue) {
@@ -233,7 +261,16 @@ namespace EnvironmentMaker {
             }
             if (Input.GetMouseButtonUp(0)) {
                 if (clickedPosition.HasValue) {
-                    undoAct = () => selectedObject.transform.position = firstPosition;
+                    int selectedIndex = textureObjects.IndexOf(selectedObject);
+                    var sprender = selectedObject.GetComponent<SpriteRenderer>();
+                    var size = sprender.bounds.size;
+                    var nowRect = textureRects[selectedIndex];
+                    var rect = new Rect(selectedObject.transform.position.x - size.x / 2, selectedObject.transform.position.z - size.z / 2, size.x, size.z);
+                    textureRects[selectedIndex] = rect;
+                    undoAct = () => {
+                        selectedObject.transform.position = firstPosition;
+                        textureRects[selectedIndex] = nowRect;
+                    };
                     clickedPosition = null;
                 }
             }
@@ -255,6 +292,7 @@ namespace EnvironmentMaker {
                 cursorRender.enabled = false;
             }
             //cursorRender.enabled = false;
+            //cursorRender.enabled = true;
         }
 
         private void CameraMove() {
@@ -296,7 +334,9 @@ namespace EnvironmentMaker {
 
         private void Undo() {
             if (undoAct != null) {
-                undoAct();
+                try {
+                    undoAct();
+                } catch { }
                 undoAct = null;
             }
         }
@@ -316,11 +356,45 @@ namespace EnvironmentMaker {
         private Sprite Texture2DToSprite(Texture2D texture) {
             return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         }
-
+        int beforeWidth = 0;
+        int beforeHeight = 0;
         private void WalkModeUpdate() {
             var pos = this.transform.position;
             Back.transform.position = pos;
-            Ground.transform.position = new Vector3(pos.x, 0, pos.z);
+            if (groundTexture != null) {
+                var tmp = Ground.transform.localScale;
+                var scale = new Vector2(tmp.x, tmp.z);
+                var groundWidth = scale.x * 10;
+                var groundHeight = scale.y * 10;
+                var dotW = groundWidth / groundTexture.width;
+                var dotH = groundHeight / groundTexture.height;
+                var start = Ground.transform.position + new Vector3(-groundWidth / 2, 0, -groundHeight / 2);
+                var playerPos = this.transform.position;
+                var diff = start - playerPos;
+                int width = (int)(Math.Abs(diff.x) / dotW);
+                int height = (int)(Math.Abs(diff.z) / dotH);
+                print($"ground:{groundTexture.width} width:{width} height:{height} color:{groundTexture.GetPixel(width, height).ToString()}");
+                if (groundTexture.GetPixel(width, height) == new Color(1, 1, 1, 0)) {
+                    //var x = width;
+                    //do {
+                    //    x++;
+                    //} while (x < groundTexture.width && groundTexture.GetPixel(x, height) != new Color(1, 1, 1, 0));
+                    //if (x >= groundTexture.width) {
+                    //    x = width;
+                    //    do {
+                    //        x--;
+                    //    } while (x >= 0 && groundTexture.GetPixel(x, height) != new Color(1, 1, 1, 0));
+                    //    if (x < 0) {
+                    //        x = width;
+                    //    }
+                    //}
+                    //var newPos = start + new Vector3(x * dotW, 0, height * dotH);
+                    //print(newPos);
+                    //controller.transform.position = newPos;
+                    print("IsOut");
+                }
+            }
+            //Ground.transform.position = new Vector3(pos.x, 0, pos.z);
         }
 
         private void OnGUI() {
@@ -367,6 +441,10 @@ namespace EnvironmentMaker {
             }
         }
 
+        string motionName = "";
+        double degree = 0;
+        string degreeStr = "0";
+        bool failure = false;
         private void EditModeGUI() {
             showButton = GUI.Button(showRect, (showTextures ? "Hidden" : "Textures"));
             if (showButton) {
@@ -399,21 +477,73 @@ namespace EnvironmentMaker {
             } else {
                 textureArea = new Rect();
             }
-            var back = GUI.Button(new Rect(0, 600, 100, 100), "背景にする");
+            var back = GUI.Button(new Rect(0, 550, 100, 100), "背景にする");
             if (back) {
                 var material = Back.GetComponent<MeshRenderer>().sharedMaterial;
                 var srender = Cursor.GetComponent<SpriteRenderer>();
-                material.mainTexture = srender.sprite.texture;
-                Back.gameObject.SetActive(true);
+                if (srender.sprite != null) {
+                    material.mainTexture = srender.sprite.texture;
+                    Back.gameObject.SetActive(true);
+                }
             }
-            var ground = GUI.Button(new Rect(100, 600, 100, 100), "地面にする");
+            var ground = GUI.Button(new Rect(100, 550, 100, 100), "地面にする");
             if (ground) {
                 var material = Ground.GetComponent<MeshRenderer>().sharedMaterial;
                 var srender = Cursor.GetComponent<SpriteRenderer>();
-                material.mainTexture = srender.sprite.texture;
-                material.color = spriteColor;
+                if (srender.sprite != null) {
+                    material.color = spriteColor;
+                    var texture = srender.sprite.texture;
+                    var list = new List<Vector2>();
+                    if (texture.height > texture.width) {
+                        var ratio = (float)texture.height / texture.width;
+                        material.mainTexture = texture;
+                        var scale = Ground.transform.localScale;
+                        Ground.transform.localScale = new Vector3(scale.x, scale.y, scale.z * ratio);
+                    } else {
+                        var ratio = (float)texture.width / texture.height;
+                        material.mainTexture = texture;
+                        var scale = Ground.transform.localScale;
+                        Ground.transform.localScale = new Vector3(scale.x * ratio, scale.y, scale.z);
+                    }
+                    groundTexture = texture;
+                }
+            }
+            var motion = GUI.Button(new Rect(200, 550, 100, 100), "モーションを\n置く");
+            GUI.TextField(new Rect(300, 550, 100, 20), "モーション名");
+            motionName = GUI.TextField(new Rect(300, 570, 100, 80), motionName);
+            if (motion) {
+                if (Directory.Exists($"polygons/{motionName}")) {
+                    var pos = GetScreenPos(mainCamera.transform.position);
+                    pos.y = 1.357328f;
+                    var pcObj = Instantiate(PointCloudPrehab, pos, Quaternion.identity) as GameObject;
+                    var pc = pcObj.GetComponent<PointCloud>();
+                    if (pc != null) {
+                        pc.DirName = motionName;
+                    }
+                } else {
+                    print("そのようなディレクトリは存在しません");
+                }
+            }
+            if (GUI.Button(new Rect(400, 550, 100, 20), fixing ? "角度固定中" : "角度自在中")) {
+                fixing = !fixing;
+            }
+            if (fixing) {
+                GUI.TextField(new Rect(400, 570, 100, 20), "角度");
+                var before = degreeStr;
+                degreeStr = GUI.TextField(new Rect(400, 590, 100, 60), degreeStr);
+                if (before != degreeStr) {
+                    if (double.TryParse(degreeStr, out degree)) {
+                        print("");
+                    } else {
+                        print("数字を入力してください");
+                    }
+                }
+            }
+            if (GUI.Button(new Rect(500, 550, 100, 100), failure ? "障害物" : "でない")) {
+                failure = !failure;
             }
         }
+        bool fixing = false;
 
         private void WalkModeGUI() {
 
