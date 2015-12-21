@@ -1,14 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace EnvironmentMaker {
     static class Functions {
         static System.Random rand = new System.Random();
+        /// <summary>
+        /// レイヤー一覧
+        /// </summary>
+        public static int[] SortingLayerUniqueIDs;
+
+        public static void Initialize() {
+            Type internalEditorUtilityType = typeof(InternalEditorUtility);
+            var sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerUniqueIDs", BindingFlags.Static | BindingFlags.NonPublic);
+            SortingLayerUniqueIDs = (int[])sortingLayersProperty.GetValue(null, new object[0]);
+        }
 
         public static int GetRandomInt(int max) => rand.Next(max);
+        public static double GetRandomDouble() => rand.NextDouble();
+        public static double GetRandomDouble(double min, double max) => rand.NextDouble() * (max - min) + min;
 
         public static List<T3> ZipWith<T1, T2, T3>(List<T1> list1, List<T2> list2, Func<T1, T2, T3> func) {
             var result = new List<T3>();

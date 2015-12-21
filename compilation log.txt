@@ -1,5 +1,5 @@
 ********************************************************************************
-*                     Sunday, December 06, 2015 2:10:43 PM                     *
+*                    Monday, December 21, 2015 12:41:14 PM                     *
 ********************************************************************************
 smcs.exe version: 1.5.3.0
 Platform: Windows
@@ -11,9 +11,9 @@ Compiler: Version6Microsoft
 - Compilation -----------------------------------------------
 
 Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/csc.exe
-Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-1396cd392a872544e9a154bd3f24288b
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-690a0a2fd85bc574f8d9138abdce33c9
 Exit code: 0
-Elapsed time: 0.95 sec
+Elapsed time: 1.00 sec
 
 - Compiler output:
 0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
@@ -29,21 +29,60 @@ Elapsed time: 0.95 sec
 6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
 7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
 8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-9: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
-10: Assets\Scripts\Player.cs(141,27): warning CS0649: Field 'Player.PointCloudPrehab' is never assigned to, and will always have its default value null
+9: Assets\Scripts\Player.cs(145,27): warning CS0649: Field 'Player.PointCloudPrehab' is never assigned to, and will always have its default value null
+10: Assets\Scripts\AdjustBody.cs(17,23): warning CS0649: Field 'AdjustBody.bodyposes' is never assigned to, and will always have its default value null
 11: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
-12: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
-13: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.Ground' is never assigned to, and will always have its default value null
-14: Assets\Scripts\PointCloud.cs(20,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+12: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
+13: Assets\Scripts\AdjustBody.cs(19,27): warning CS0649: Field 'AdjustBody.Pointer' is never assigned to, and will always have its default value null
+14: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
 15: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
-16: Assets\Scripts\Player.cs(360,13): warning CS0414: The field 'Player.beforeHeight' is assigned but its value is never used
-17: Assets\Scripts\Player.cs(359,13): warning CS0414: The field 'Player.beforeWidth' is assigned but its value is never used
+16: Assets\Scripts\PointCloud.cs(20,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+17: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.baseGround' is never assigned to, and will always have its default value null
+18: Assets\Scripts\AdjustBody.cs(27,13): warning CS0414: The field 'AdjustBody.nextRouteIndex' is assigned but its value is never used
+19: Assets\Scripts\Player.cs(704,13): warning CS0414: The field 'Player.beforeWidth' is assigned but its value is never used
+20: Assets\Scripts\AdjustBody.cs(25,14): warning CS0414: The field 'AdjustBody.looped' is assigned but its value is never used
+21: Assets\Scripts\AdjustBody.cs(104,16): warning CS0414: The field 'AdjustBody.beforeMag' is assigned but its value is never used
+22: Assets\Scripts\Player.cs(705,13): warning CS0414: The field 'Player.beforeHeight' is assigned but its value is never used
+23: Assets\Scripts\PointCloud.cs(105,16): warning CS0414: The field 'PointCloud.beforeMag' is assigned but its value is never used
+24: Assets\Scripts\AdjustBody.cs(28,15): warning CS0414: The field 'AdjustBody.length' is assigned but its value is never used
+25: Assets\Scripts\PointCloud.cs(30,13): warning CS0414: The field 'PointCloud.nextRouteIndex' is assigned but its value is never used
 
 - PDB to MDB conversion --------------------------------------
 
 Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/pdb2mdb.exe
 Arguments: Temp\Assembly-CSharp.dll
-Elapsed time: 0.19 sec
+Elapsed time: 0.62 sec
+
+- pdb2mdb.exe output:
+
+********************************************************************************
+*                    Monday, December 21, 2015 12:41:16 PM                     *
+********************************************************************************
+smcs.exe version: 1.5.3.0
+Platform: Windows
+Target assembly: Assembly-CSharp-Editor.dll
+Project directory: C:\Users\toyuk\Documents\kyodai\EmvirontMaker
+Unity directory: C:/Program Files/Unity/Editor/Data
+Compiler: Version6Microsoft
+
+- Compilation -----------------------------------------------
+
+Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-fa2ba1b3e18783c4bb3891a189322db0
+Exit code: 0
+Elapsed time: 0.67 sec
+
+- Compiler output:
+0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
+1: Copyright (C) Microsoft Corporation. All rights reserved.
+
+- Compiler errors:
+
+- PDB to MDB conversion --------------------------------------
+
+Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/pdb2mdb.exe
+Arguments: Temp\Assembly-CSharp-Editor.dll
+Elapsed time: 0.29 sec
 
 - pdb2mdb.exe output:
 

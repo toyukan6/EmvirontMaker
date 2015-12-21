@@ -24,6 +24,14 @@ namespace EnvironmentMaker {
         Vector3[] estimates;
         Dictionary<JointType, Vector3>[] partsCorrections;
         List<Dictionary<JointType, Vector3>> bodyList;
+        bool loadEnd = false;
+        bool looped = false;
+        List<Vector2> route = new List<Vector2>();
+        int nextRouteIndex = 0;
+        float length = 10f;
+        Vector3 firstPosition;
+        Vector3? start;
+        Vector3? end;
 
         private Mesh mesh;
 
@@ -46,7 +54,7 @@ namespace EnvironmentMaker {
                 pointsNumbers[i] = 0;
             }
             GetComponent<MeshFilter>().mesh = mesh;
-            LoadModels(DirName);
+            StartCoroutine(LoadModels(DirName));
             LoadIndexCSV(DirName);
             LoadBodyDump(DirName);
             var array = new int[10];
@@ -57,53 +65,131 @@ namespace EnvironmentMaker {
             //}
         }
 
+        public void Initialize(Vector2? start, Vector2? end) {
+            this.start = start;
+            this.end = end;
+            if (start.HasValue) {
+                var value = start.Value;
+                this.transform.position = new Vector3(value.x, this.transform.position.y, value.y);
+                if (end.HasValue) {
+                    Vector2 diff = end.Value - start.Value;
+                    double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 4;
+                    var angle = this.transform.localEulerAngles;
+                    this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
+                }
+            }
+            //var next = route[nextRouteIndex];
+            //var nowIndex = pointsNumbers[0];
+            //var startAvr = Functions.AverageVector(mergePoints[0].Select(p => p.GetVector3()).ToList());
+            //var nowAvr = Functions.AverageVector(mergePoints[nowIndex].Select(p => p.GetVector3()).ToList());
+            //var diffAvr = nowAvr - startAvr;
+            //var mag = (this.transform.position + diff - new Vector3(next.x, 0, next.y)).sqrMagnitude;
+            //if (mag < 10) {
+            //    print("changed!");
+            //    int before = nextRouteIndex;
+            //    nextRouteIndex = (nextRouteIndex + 1) % route.Count;
+            //    if (before > nextRouteIndex) {
+            //        this.transform.position = firstPosition;
+            //        nextRouteIndex = 1;
+            //    }
+            //    Vector2 target = route[nextRouteIndex];
+            //    Vector3 target3 = new Vector3(target.x, this.transform.position.y, target.y);
+            //    print(this.transform.position);
+            //    this.transform.LookAt(target3);
+            //    print(this.transform.position);
+            //    this.transform.localEulerAngles -= new Vector3(0, 45, 0);
+            //}
+            //beforeMag = mag;
+        }
+
+        double beforeMag = double.MaxValue;
         void Update() {
         }
 
         void FixedUpdate() {
-            var oldMesh = mesh;
-            mesh = new Mesh();
-            GetComponent<MeshFilter>().mesh = mesh;
-            DestroyImmediate(oldMesh);
+            if (loadEnd) {
+                var oldMesh = mesh;
+                mesh = new Mesh();
+                GetComponent<MeshFilter>().mesh = mesh;
+                DestroyImmediate(oldMesh);
 
-            var points = new List<Vector3>();
-            var colors = new List<Color>();
-            var time = Time.deltaTime * 1000;
-            for (int i = 0; i < kinectNums; i++) {
-                beforeTime[i] += (int)Math.Floor(time);
-                int index = pointsNumbers[i];
-                var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
-                if (beforeTime[i] > timeDiff)
-                    pointsNumbers[i] = (pointsNumbers[i] + 1) % walkPoints.Count;
-                foreach (var v in walkPoints[pointsNumbers[i]][i]) {
-                    points.Add(v);
+                var points = new List<Vector3>();
+                var colors = new List<Color>();
+                var time = Time.deltaTime * 1000;
+                for (int i = 0; i < kinectNums; i++) {
+                    beforeTime[i] += (int)Math.Floor(time);
+                    int index = pointsNumbers[i];
+                    var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
+                    if (beforeTime[i] > timeDiff) {
+                        var before = pointsNumbers[i];
+                        pointsNumbers[i] = (pointsNumbers[i] + 1) % walkPoints.Count;
+                        if (before > pointsNumbers[i]) {
+                            looped = true;
+                        }
+                    }
+                    foreach (var v in walkPoints[pointsNumbers[i]][i]) {
+                        points.Add(v);
+                    }
+                    foreach (var c in walkColors[pointsNumbers[i]][i]) {
+                        colors.Add(c);
+                    }
                 }
-                foreach (var c in walkColors[pointsNumbers[i]][i]) {
-                    colors.Add(c);
+                if (looped) {
+                    for (int i = 0; i < kinectNums; i++) {
+                        pointsNumbers[i] = 0;
+                        beforeTime[i] = 0;
+                    }
+                    var start = mergePoints.First();
+                    var last = mergePoints.Last();
+                    var startAverage = Functions.AverageVector(start.Select(s => s.GetVector3()).ToList());
+                    var lastAverage = Functions.AverageVector(last.Select(s => s.GetVector3()).ToList());
+                    var diff = lastAverage - startAverage;
+                    var theta = transform.localEulerAngles.y * Math.PI / 180;
+                    this.transform.position += diff.RotateXZ(-theta);
+                    if (end.HasValue) {
+                        Vector2 value = end.Value;
+                        Vector3 target = new Vector3(value.x, this.transform.position.y, value.y);
+                        float sqrMagnitude = (target - this.transform.position).sqrMagnitude;
+                        double threshold = 3;
+                        print(sqrMagnitude);
+                        if (sqrMagnitude < threshold * threshold) {
+                            GotoFirst();
+                        }
+                    } else {
+                        float sqrMagnitude = (firstPosition - this.transform.position).sqrMagnitude;
+                        if (sqrMagnitude > length * length) {
+                            GotoFirst();
+                        }
+                    }
+                    looped = false;
                 }
-            }
-            //var positions = new Vector3[pointers.Count];
-            //var thisPos = this.transform.position;
-            //var pn = pointsNumbers[0];
-            //Parallel.ForEach<JointType>(Enum.GetValues(typeof(JointType)).Cast<JointType>(), type => {
-            //    var diff = bodyList[pn][type] - bodyList[pn][(int)JointType.SpineBase];
-            //    var basePos = estimates[pn % estimates.Length] + diff;
-            //    positions[(int)type] = basePos;// ApplyPointerPos(mergePoints[pn].ToList(), basePos, type);
-            //});
-            //for (int i = 0; i < positions.Length; i++) {
+                //var positions = new Vector3[pointers.Count];
+                //var thisPos = this.transform.position;
+                //var pn = pointsNumbers[0];
+                //Parallel.ForEach<JointType>(Enum.GetValues(typeof(JointType)).Cast<JointType>(), type => {
+                //    var diff = bodyList[pn][type] - bodyList[pn][(int)JointType.SpineBase];
+                //    var basePos = estimates[pn % estimates.Length] + diff;
+                //    positions[(int)type] = basePos;// ApplyPointerPos(mergePoints[pn].ToList(), basePos, type);
+                //});
+                //for (int i = 0; i < positions.Length; i++) {
                 //if (partsCorrections[pn].ContainsKey((JointType)i)) {
                 //    pointers[i].transform.position =  thisPos + partsCorrections[pn][(JointType)i];
                 //} else {
                 //    pointers[i].transform.position = thisPos + positions[i];
                 //}
-            //    pointers[i].transform.position = thisPos + positions[i];
-            //}
-            mesh.vertices = points.ToArray();
-            mesh.colors = colors.ToArray();
-            mesh.SetIndices(Enumerable.Range(0, points.Count).ToArray(), MeshTopology.Points, 0);
+                //    pointers[i].transform.position = thisPos + positions[i];
+                //}
+                mesh.vertices = points.ToArray();
+                mesh.colors = colors.ToArray();
+                mesh.SetIndices(Enumerable.Range(0, points.Count).ToArray(), MeshTopology.Points, 0);
+            }
         }
 
-        void LoadModels(string dir) {
+        private void GotoFirst() {
+            this.transform.position = firstPosition;
+        }
+
+        IEnumerator<int> LoadModels(string dir) {
             string baseDir = $@"polygons\{dir}";
             int num = 0;
             while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
@@ -115,7 +201,7 @@ namespace EnvironmentMaker {
             estimates = new Vector3[num];
             partsCorrections = new Dictionary<JointType, Vector3>[num];
             var completeMerge = new Point[num][];
-            Parallel.For(0, num, n => {
+            for(int n = 0; n < num; n++) {
                 var pointlist = new List<Point>[kinectNums];
                 var list = new List<Point>();
                 for (int i = 0; i < kinectNums; i++) {
@@ -124,6 +210,7 @@ namespace EnvironmentMaker {
                     foreach (var p in reader.Load(fileName)) {
                         plist.Add(p);
                     }
+                    //yield return n;
                     if (i > 0) {
                         var source = new List<Point>();
                         for (int j = 0; j < i; j++) {
@@ -131,9 +218,11 @@ namespace EnvironmentMaker {
                         }
                         var sourceBorder = BorderPoints(source);
                         var destBorder = BorderPoints(plist);
+                        //yield return n;
                         //var sourceLine = CalcLine(SelectPoint(plist, source));
                         //var destLine = CalcLine(SelectPoint(source, plist));
                         float diffY = (float)CalcY(sourceBorder, destBorder);
+                        //yield return n;
                         //var diffXZ = CalcXZ(sourceLine, destLine);
                         if (diffY < 0.2) {
                             plist = plist.Select(p => p - new Vector3(0, diffY, 0)).ToList();
@@ -143,33 +232,44 @@ namespace EnvironmentMaker {
                     foreach (var p in plist) {
                         list.Add(p);
                     }
+                    //yield return n;
                 }
                 //ApplyXZ(pointlist);
                 tmpPoints[n] = pointlist.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
                 tmpColors[n] = pointlist.Select(c => c.Select(p => p.GetColor()).ToArray()).ToArray();
                 completeMerge[n] = list.ToArray();
+                //yield return n;
                 int max = (int)Math.Sqrt(list.Count);
                 var tmpList = new List<Point>();
-                var rand = new System.Random();
                 for (int i = 0; i < max; i++) {
-                    var point = list[rand.Next(list.Count)];
+                    var point = list[Functions.GetRandomInt(list.Count)];
                     tmpList.Add(point);
                     list.Remove(point);
                 }
                 points[n] = tmpList.ToArray();
-            });
+                //yield return n;
+            }
             walkPoints = tmpPoints.ToList();
             walkColors = tmpColors.ToList();
             mergePoints = points.ToList();
-            var sborder = BorderPoints(completeMerge[0].ToList());
-            var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
-            var standard = sborder.Find(s => Math.Abs(s.Average(v => v.Y)) == ymed);
-            estimates[0] = Functions.AverageVector(standard.Select(s => s.GetVector3()).ToList());
-            InitPartsCorrection();
-            Parallel.For(1, walkColors.Count, i => {
-                EstimateHip(standard, completeMerge[i].ToList(), i);
-                //CalcPartsCorrection(completeMerge[i].ToList(), i);
-            });
+            //var sborder = BorderPoints(completeMerge[0].ToList());
+            ////yield return 0;
+            //var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
+            //var standard = sborder.Find(s => Math.Abs(s.Average(v => v.Y)) == ymed);
+            //estimates[0] = Functions.AverageVector(standard.Select(s => s.GetVector3()).ToList());
+            ////yield return 0;
+            //InitPartsCorrection();
+            //for(int i = 1; i < walkColors.Count; i++) {
+            //    EstimateHip(standard, completeMerge[i].ToList(), i);
+            //    //yield return i;
+            //    //CalcPartsCorrection(completeMerge[i].ToList(), i);
+            //}
+            var diff = Functions.AverageVector(completeMerge[0].Select(p => p.GetVector3()).ToList());
+            print(diff);
+            this.transform.position -= diff;
+            firstPosition = this.transform.position;
+            loadEnd = true;
+            yield return 0;
         }
 
         void LoadIndexCSV(string dir) {
