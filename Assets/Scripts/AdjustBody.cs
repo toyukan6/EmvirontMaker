@@ -269,39 +269,18 @@ namespace EnvironmentMaker {
             voxels[index] = new Voxel<List<Point>>(width, height, depth, minX, minY, minZ, delta);
             anothervoxels[index] = new Voxel<List<Point>>(width, height, depth, minX - delta * 0.5, minY - delta * 0.5, minZ - delta * 0.5, delta);
             for (int i = 0; i < width; i++) {
-                double x = minX + delta * i;
-                var target = basedata.FindAll(tp => {
-                    Vector3 vec = tp.GetVector3();
-                    return vec.x >= x && vec.x < x + delta;
-                });
-                var anothertarget = basedata.FindAll(tp => {
-                    Vector3 vec = tp.GetVector3();
-                    return vec.x >= x - delta * 0.5 && vec.x < x + delta * 0.5;
-                });
-                for (int k = 0; k < depth; k++) {
-                    double z = minZ + delta * k;
-                    var secondtarget = target.FindAll(tp => {
-                        Vector3 vec = tp.GetVector3();
-                        return vec.z >= z && vec.z < z + delta;
-                    });
-                    var secondanothertarget = anothertarget.FindAll(tp => {
-                        Vector3 vec = tp.GetVector3();
-                        return vec.z >= z - delta * 0.5 && vec.z < z + delta * 0.5;
-                    });
-                    for (int j = 0; j < height; j++) {
-                        double y = minY + delta * j;
-                        var thirdtarget = secondtarget.FindAll(tp => {
-                            Vector3 vec = tp.GetVector3();
-                            return vec.y >= y && vec.y < y + delta;
-                        });
-                        var thirdanothertarget = secondanothertarget.FindAll(tp => {
-                            Vector3 vec = tp.GetVector3();
-                            return vec.y >= y - delta * 0.5 && vec.y < y + delta * 0.5;
-                        });
-                        voxels[index][i, j, k] = thirdtarget;
-                        anothervoxels[index][i, j, k] = thirdanothertarget;
+                for (int j = 0; j < height; j++) {
+                    for (int k = 0; k < depth; k++) {
+                        voxels[index][i, j, k] = new List<Point>();
+                        anothervoxels[index][i, j, k] = new List<Point>();
                     }
                 }
+            }
+            foreach (var d in basedata) {
+                var indexVec = voxels[index].GetIndexFromPosition(d.GetVector3());
+                voxels[index][(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
+                var aindex = anothervoxels[index].GetIndexFromPosition(d.GetVector3());
+                anothervoxels[index][(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
             }
         }
 
@@ -368,56 +347,12 @@ namespace EnvironmentMaker {
                 for (int j = 0; j < partsTypes.Length - 1; j++) {
                     JointType firstJoint = partsTypes[j];
                     JointType nextJoint = partsTypes[j + 1];
-                    Vector3 firstIndexFirstJointVoxel = voxels[firstIndex].GetIndexFromPosition(firstBodyParts[firstIndex, (int)firstJoint] - this.transform.position);
-                    //Vector3 firstIndexNextJointVoxel = voxels[firstIndex].GetIndexFromPosition(firstBodyParts[firstIndex, (int)nextJoint] - this.transform.position);
-                    //Vector3 nextIndexFirstJointVoxel = voxels[nextIndex].GetIndexFromPosition(firstBodyParts[nextIndex, (int)firstJoint] - this.transform.position);
-                    //Vector3 nextIndexNextJointVoxel = voxels[nextIndex].GetIndexFromPosition(firstBodyParts[nextIndex, (int)nextJoint] - this.transform.position);
-                    var offsets = new[] {
-                        new Vector3(0, 0, 0),
-                        new Vector3(0, 0, 1),
-                        new Vector3(0, 0, -1),
-                        //new Vector3(0, 1, 1),
-                        //new Vector3(0, 1, -1),
-                        //new Vector3(0, -1, -1),
-                        //new Vector3(0, -1, 1),
-                        new Vector3(0, 1, 0),
-                        new Vector3(0, -1, 0),
-                        //new Vector3(1, 1, 0),
-                        //new Vector3(1, -1, 0),
-                        //new Vector3(-1, -1, 0),
-                        //new Vector3(-1, 1, 0),
-                        new Vector3(1, 0, 0),
-                        new Vector3(-1, 0, 0),
-                        //new Vector3(1, 0, 1),
-                        //new Vector3(1, 0, -1),
-                        //new Vector3(-1, 0, -1),
-                        //new Vector3(-1, 0, 1),
-                        //new Vector3(1, 1, 1),
-                        //new Vector3(1, 1, -1),
-                        //new Vector3(1, -1, -1),
-                        //new Vector3(1, -1, 1),
-                        //new Vector3(-1, -1, 1),
-                        //new Vector3(-1, 1, 1),
-                        //new Vector3(-1, 1, -1),
-                        //new Vector3(-1, -1, -1)
-                    };
-                    var neighbors = new List<List<Point>>();
-                    for (int k = 0; k < offsets.Length; k++) {
-                        Vector3 position = firstIndexFirstJointVoxel + offsets[k];
-                        if (voxels[firstIndex].IsWithinArray(position)) {
-                            var n = voxels[firstIndex][(int)position.x, (int)position.y, (int)position.z];
-                            neighbors.Add(n);
-                        }
-                    }
-                    print(neighbors.Sum(n => n.Count));
-                    //Vector3 firstVector = firstBodyParts[firstIndex, (int)nextJoint] - firstBodyParts[firstIndex, (int)firstJoint];
-                    //Vector3 nextVector = firstBodyParts[nextIndex, (int)nextJoint] - firstBodyParts[nextIndex, (int)firstJoint];
-                    //Vector3 moved = nextVector - firstVector;
-                    //int numbers = nextIndex - firstIndex - 1;
-                    //for (int k = firstIndex + 1; k < nextIndex; k++) {
-                    //    var result = (firstVector + moved * (k - firstIndex) / numbers).normalized * firstVector.magnitude;
-                    //    var minus = firstBodyParts[k, (int)nextJoint] - firstBodyParts[k, (int)firstJoint];
-                    //    partsCorrections[k][nextJoint] = result + partsCorrections[k][firstJoint] - minus;
+                    //var firstIndexFirstJointVoxel = voxels[firstIndex].GetVoxelFromPosition(firstBodyParts[firstIndex, (int)firstJoint] - this.transform.position);
+                    var firstIndexFirstJointVoxel = voxels[firstIndex].GetIndexFromPosition(firstBodyParts[firstIndex, (int)firstJoint] - this.transform.position);
+                    //if (firstIndexFirstJointVoxel.Count > 0) {
+                    //    for (int k = firstIndex + 1; k < nextIndex; k++) {
+
+                    //    }
                     //}
                 }
             }

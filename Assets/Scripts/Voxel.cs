@@ -51,27 +51,20 @@ namespace EnvironmentMaker {
         }
 
         public Vector3 GetIndexFromPosition(Vector3 position) {
-            for (int i = 0; i < voxel.GetLength(0); i++) {
-                double x = startX + delta * (i + 1);
-                if (x > position.x) {
-                    for (int j = 0; j < voxel.GetLength(1); j++) {
-                        double y = startY + delta * (j + 1);
-                        if (y > position.y) {
-                            for (int k = 0; k < voxel.GetLength(2); k++) {
-                                double z = startZ + delta * (k + 1);
-                                if (z > position.z) {
-                                    return new Vector3(i, j, k);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return Vector3.zero;
+            double x = (position.x - startX) / delta;
+            double y = (position.y - startY) / delta;
+            double z = (position.z - startZ) / delta;
+            return new Vector3((int)x, (int)y, (int)z);
         }
 
         public Vector3 GetPositionFromIndex(Vector3 index) {
             return new Vector3((float)(startX + delta * index.x), (float)(startY + delta * index.y), (float)(startZ + delta * index.z));
+        }
+
+        double[] Histogram(List<Point> points) {
+            var result = new List<double>();
+            points.ForEach(p => points.ForEach(p2 => result.Add((p.GetVector3() - p2.GetVector3()).magnitude)));
+            return result.ToArray();
         }
     }
 }
