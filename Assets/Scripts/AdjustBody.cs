@@ -27,8 +27,24 @@ namespace EnvironmentMaker {
         int nextRouteIndex = 0;
         float length = 10f;
         Vector3 firstPosition;
-        Vector3? start;
-        Vector3? end;
+        TwoDLine bodyLine;
+        GameObject cursor;
+        JointType selectedType = JointType.SpineBase;
+        public GameObject Selected;
+        private GameObject selectedPointer;
+        public GameObject MainCamera;
+        public GameObject OverViewCamera;
+        private Vector3[,] firstJoint;
+        private Vector3[,] offsets;
+        private Vector3 stopPosition;
+        private Vector3 stopEularAngle;
+        private Vector3 movePosition;
+        private Vector3 moveEularAngle;
+        private bool stopped = true;
+        private int baseIndex;
+        private Vector3[,] firstBodyParts;
+        private Voxel<List<Point>>[] voxels;
+        private Voxel<List<Point>>[] anothervoxels;
 
         private Mesh mesh;
 
@@ -51,7 +67,7 @@ namespace EnvironmentMaker {
                 pointsNumbers[i] = 0;
             }
             GetComponent<MeshFilter>().mesh = mesh;
-            StartCoroutine(LoadModels(DirName));
+            LoadModels(DirName);
             LoadIndexCSV(DirName);
             LoadBodyDump(DirName);
             var array = new int[10];
@@ -61,134 +77,374 @@ namespace EnvironmentMaker {
                 obj.GetComponentInChildren<TextMesh>().text = obj.name;
                 pointers.Add(obj);
             }
-            print(pointers.Count);
-        }
-
-        public void Initialize(Vector2? start, Vector2? end) {
-            this.start = start;
-            this.end = end;
-            if (start.HasValue) {
-                var value = start.Value;
-                this.transform.position = new Vector3(value.x, this.transform.position.y, value.y);
-                if (end.HasValue) {
-                    Vector2 diff = end.Value - start.Value;
-                    double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 4;
-                    var angle = this.transform.localEulerAngles;
-                    this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
+            var positions = new Vector3[pointers.Count];
+            var thisPos = this.transform.position;
+            firstJoint = new Vector3[walkPoints.Count, Enum.GetNames(typeof(JointType)).Length];
+            for (int i = walkPoints.Count - 1; i >= 0; i--) {
+                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                    var diff = bodyList[i][type] - bodyList[i][(int)JointType.SpineBase];
+                    var basePos = estimates[i % estimates.Length] + diff;
+                    positions[(int)type] = basePos;
+                }
+                for (int j = 0; j < firstJoint.GetLength(1); j++) {
+                    firstJoint[i, j] = thisPos + positions[j];
                 }
             }
-            //var next = route[nextRouteIndex];
-            //var nowIndex = pointsNumbers[0];
-            //var startAvr = Functions.AverageVector(mergePoints[0].Select(p => p.GetVector3()).ToList());
-            //var nowAvr = Functions.AverageVector(mergePoints[nowIndex].Select(p => p.GetVector3()).ToList());
-            //var diffAvr = nowAvr - startAvr;
-            //var mag = (this.transform.position + diff - new Vector3(next.x, 0, next.y)).sqrMagnitude;
-            //if (mag < 10) {
-            //    print("changed!");
-            //    int before = nextRouteIndex;
-            //    nextRouteIndex = (nextRouteIndex + 1) % route.Count;
-            //    if (before > nextRouteIndex) {
-            //        this.transform.position = firstPosition;
-            //        nextRouteIndex = 1;
-            //    }
-            //    Vector2 target = route[nextRouteIndex];
-            //    Vector3 target3 = new Vector3(target.x, this.transform.position.y, target.y);
-            //    print(this.transform.position);
-            //    this.transform.LookAt(target3);
-            //    print(this.transform.position);
-            //    this.transform.localEulerAngles -= new Vector3(0, 45, 0);
-            //}
-            //beforeMag = mag;
+            for (int i = 0; i < positions.Length; i++) {
+                pointers[i].transform.position = thisPos + positions[i];
+            }
+            offsets = new Vector3[walkPoints.Count, Enum.GetNames(typeof(JointType)).Length];
+            for (int i = 0; i < offsets.GetLength(0); i++) {
+                for (int j = 0; j < offsets.GetLength(1); j++) {
+                    offsets[i, j] = Vector3.zero;
+                }
+            }
+            firstBodyParts = new Vector3[walkPoints.Count, Enum.GetNames(typeof(JointType)).Length];
+            baseIndex = 0;
+            selectedPointer = Instantiate(Selected);
+            stopPosition = this.transform.position;
+            stopEularAngle = this.transform.localEulerAngles;
+            movePosition = new Vector3(1.1f, 1.4f, -1);
+            moveEularAngle = new Vector3(0, 0, 0);
+            UpdateMesh();
         }
 
         double beforeMag = double.MaxValue;
         void Update() {
+            int number = pointsNumbers[0];
+            if (stopped) {
+                GameObject selectedObj = pointers[(int)selectedType];
+
+                if (Input.GetKey(KeyCode.D)) {
+                    offsets[number, (int)selectedType] += new Vector3(0.01f, 0, 0);
+                } else if (Input.GetKey(KeyCode.A)) {
+                    offsets[number, (int)selectedType] -= new Vector3(0.01f, 0, 0);
+                } else if (Input.GetKey(KeyCode.W)) {
+                    offsets[number, (int)selectedType] += new Vector3(0, 0, 0.01f);
+                } else if (Input.GetKey(KeyCode.S)) {
+                    offsets[number, (int)selectedType] -= new Vector3(0, 0, 0.01f);
+                } else if (Input.GetKey(KeyCode.X)) {
+                    offsets[number, (int)selectedType] += new Vector3(0, 0.01f, 0);
+                } else if (Input.GetKey(KeyCode.Z)) {
+                    offsets[number, (int)selectedType] -= new Vector3(0, 0.01f, 0);
+                }
+
+                //selectedObj.transform.position = firstJoint[number, (int)selectedType] + offsets[number, (int)selectedType];
+                selectedPointer.transform.position = selectedObj.transform.position;
+
+                if (Input.GetKeyDown(KeyCode.DownArrow)) {
+                    selectedType = (JointType)(((int)selectedType + 1) % Enum.GetNames(typeof(JointType)).Length);
+                } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
+                    selectedType = (JointType)(((int)selectedType - 1 + Enum.GetNames(typeof(JointType)).Length) % Enum.GetNames(typeof(JointType)).Length);
+                }
+
+                int before = pointsNumbers[0];
+                if (Input.GetKeyDown(KeyCode.RightArrow)) {
+                    pointsNumbers[0] = (pointsNumbers[0] + 1) % walkPoints.Count;
+                } else if (Input.GetKeyDown(KeyCode.LeftArrow)) {
+                    pointsNumbers[0] = (pointsNumbers[0] - 1 + walkPoints.Count) % walkPoints.Count;
+                }
+                if (before != pointsNumbers[0]) {
+                    AdjustStopCamera(before);
+                }
+                OverViewCamera.transform.position = pointers[(int)selectedType].transform.position + new Vector3(0, 0.5f, 0);
+
+                if (Input.GetKey(KeyCode.J)) {
+                    OverViewCamera.transform.position += new Vector3(0, -0.01f, 0);
+                } else if (Input.GetKey(KeyCode.K)) {
+                    OverViewCamera.transform.position += new Vector3(0, 0.01f, 0);
+                } else if (Input.GetKey(KeyCode.H)) {
+                    OverViewCamera.transform.position += new Vector3(-0.01f, 0, 0);
+                } else if (Input.GetKey(KeyCode.L)) {
+                    OverViewCamera.transform.position += new Vector3(0.01f, 0, 0);
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                stopped = !stopped;
+                if (stopped) {
+                    OverViewCamera.SetActive(true);
+                    selectedPointer.SetActive(true);
+                    MainCamera.transform.position = stopPosition;
+                    MainCamera.transform.eulerAngles = stopEularAngle;
+                    for (int i = 0; i < kinectNums; i++) {
+                        pointsNumbers[i] = 0;
+                        beforeTime[i] = 0;
+                    }
+                    var positions = new Vector3[pointers.Count];
+                    var thisPos = this.transform.position;
+                    var pn = pointsNumbers[0];
+                    foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                        var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
+                        var basePos = estimates[pn % estimates.Length] + diff + offsets[number, (int)type];
+                        positions[(int)type] = basePos;
+                    }
+                    for (int i = 0; i < positions.Length; i++) {
+                        pointers[i].transform.position = thisPos + positions[i];
+                    }
+                    UpdateMesh();
+                } else {
+                    OverViewCamera.SetActive(false);
+                    selectedPointer.SetActive(false);
+                    MainCamera.transform.position = movePosition;
+                    MainCamera.transform.eulerAngles = moveEularAngle;
+                    for (int i = 0; i < kinectNums; i++) {
+                        pointsNumbers[i] = 0;
+                        beforeTime[i] = 0;
+                    }
+                    CalcCorrection();
+                }
+            }
         }
 
         void FixedUpdate() {
             if (loadEnd) {
-                var oldMesh = mesh;
-                mesh = new Mesh();
-                GetComponent<MeshFilter>().mesh = mesh;
-                DestroyImmediate(oldMesh);
-
-                var points = new List<Vector3>();
-                var colors = new List<Color>();
-                //var time = Time.deltaTime * 1000;
+                bool changed = false;
+                var time = Time.deltaTime * 1000;
                 for (int i = 0; i < kinectNums; i++) {
-                    //beforeTime[i] += (int)Math.Floor(time);
-                    //int index = pointsNumbers[i];
-                    //var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
-                    //if (beforeTime[i] > timeDiff) {
-                    //    var before = pointsNumbers[i];
-                    //    pointsNumbers[i] = (pointsNumbers[i] + 1) % walkPoints.Count;
-                    //    if (before > pointsNumbers[i]) {
-                    //        looped = true;
-                    //    }
-                    //}
-                    foreach (var v in walkPoints[pointsNumbers[i]][i]) {
-                        points.Add(v);
-                    }
-                    foreach (var c in walkColors[pointsNumbers[i]][i]) {
-                        colors.Add(c);
+                    if (!stopped) {
+                        beforeTime[i] += (int)Math.Floor(time);
+                        int index = pointsNumbers[i];
+                        var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
+                        if (beforeTime[i] > timeDiff) {
+                            var before = pointsNumbers[i];
+                            pointsNumbers[i] = (pointsNumbers[i] + 1) % walkPoints.Count;
+                            changed = true;
+                        }
                     }
                 }
-                //if (looped) {
-                //    for (int i = 0; i < kinectNums; i++) {
-                //        pointsNumbers[i] = 0;
-                //        beforeTime[i] = 0;
-                //    }
-                //    var start = mergePoints.First();
-                //    var last = mergePoints.Last();
-                //    var startAverage = Functions.AverageVector(start.Select(s => s.GetVector3()).ToList());
-                //    var lastAverage = Functions.AverageVector(last.Select(s => s.GetVector3()).ToList());
-                //    var diff = lastAverage - startAverage;
-                //    var theta = transform.localEulerAngles.y * Math.PI / 180;
-                //    this.transform.position += diff.RotateXZ(-theta);
-                //    if (end.HasValue) {
-                //        Vector2 value = end.Value;
-                //        Vector3 target = new Vector3(value.x, this.transform.position.y, value.y);
-                //        float sqrMagnitude = (target - this.transform.position).sqrMagnitude;
-                //        double threshold = 3;
-                //        print(sqrMagnitude);
-                //        if (sqrMagnitude < threshold * threshold) {
-                //            GotoFirst();
-                //        }
-                //    } else {
-                //        float sqrMagnitude = (firstPosition - this.transform.position).sqrMagnitude;
-                //        if (sqrMagnitude > length * length) {
-                //            GotoFirst();
-                //        }
-                //    }
-                //    looped = false;
-                //}
+                if (changed) {
+                    UpdateMesh();
+                }
                 var positions = new Vector3[pointers.Count];
                 var thisPos = this.transform.position;
                 var pn = pointsNumbers[0];
                 foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    var diff = bodyList[pn][type] - bodyList[pn][(int)JointType.SpineBase];
-                    var basePos = estimates[pn % estimates.Length] + diff;
-                    positions[(int)type] = basePos;// ApplyPointerPos(mergePoints[pn].ToList(), basePos, type);
+                    //var diff = bodyList[pn][type] - bodyList[pn][JointType.SpineBase];
+                    var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
+                    var basePos = estimates[pn % estimates.Length] + diff + offsets[pn, (int)type] + partsCorrections[pn][type];
+                    positions[(int)type] = basePos;
                 }
                 for (int i = 0; i < positions.Length; i++) {
-                    //if (partsCorrections[pn].ContainsKey((JointType)i)) {
-                    //    pointers[i].transform.position = thisPos + partsCorrections[pn][(JointType)i];
-                    //} else {
-                    //    pointers[i].transform.position = thisPos + positions[i];
-                    //}
                     pointers[i].transform.position = thisPos + positions[i];
                 }
-                mesh.vertices = points.ToArray();
-                mesh.colors = colors.ToArray();
-                mesh.SetIndices(Enumerable.Range(0, points.Count).ToArray(), MeshTopology.Points, 0);
             }
         }
 
-        private void GotoFirst() {
-            this.transform.position = firstPosition;
+        void UpdateMesh() {
+            var oldMesh = mesh;
+            mesh = new Mesh();
+            GetComponent<MeshFilter>().mesh = mesh;
+            DestroyImmediate(oldMesh);
+
+            var points = new List<Vector3>();
+            var colors = new List<Color>();
+            var time = Time.deltaTime * 1000;
+            for (int i = 0; i < kinectNums; i++) {
+                foreach (var v in walkPoints[pointsNumbers[i]][i]) {
+                    points.Add(v);
+                }
+                foreach (var c in walkColors[pointsNumbers[i]][i]) {
+                    colors.Add(c);
+                }
+            }
+            mesh.vertices = points.ToArray();
+            mesh.colors = colors.ToArray();
+            mesh.SetIndices(Enumerable.Range(0, points.Count).ToArray(), MeshTopology.Points, 0);
         }
 
-        IEnumerator<int> LoadModels(string dir) {
+        void PointToVoxel(List<Point> basedata, int index) {
+            double maxX = Math.Ceiling(basedata.Max(p => p.GetVector3().x));
+            double minX = Math.Floor(basedata.Min(p => p.GetVector3().x));
+            double maxY = Math.Ceiling(basedata.Max(p => p.GetVector3().y));
+            double minY = Math.Floor(basedata.Min(p => p.GetVector3().y));
+            double maxZ = Math.Ceiling(basedata.Max(p => p.GetVector3().z));
+            double minZ = Math.Floor(basedata.Min(p => p.GetVector3().z));
+            //1 = 1メートル
+            double delta = 0.05;
+            int inverse = (int)(1 / delta);
+            int width = (int)((maxX - minX) * inverse);
+            int height = (int)((maxY - minY) * inverse);
+            int depth = (int)((maxZ - minZ) * inverse);
+            voxels[index] = new Voxel<List<Point>>(width, height, depth, minX, minY, minZ, delta);
+            anothervoxels[index] = new Voxel<List<Point>>(width, height, depth, minX - delta * 0.5, minY - delta * 0.5, minZ - delta * 0.5, delta);
+            for (int i = 0; i < width; i++) {
+                double x = minX + delta * i;
+                var target = basedata.FindAll(tp => {
+                    Vector3 vec = tp.GetVector3();
+                    return vec.x >= x && vec.x < x + delta;
+                });
+                var anothertarget = basedata.FindAll(tp => {
+                    Vector3 vec = tp.GetVector3();
+                    return vec.x >= x - delta * 0.5 && vec.x < x + delta * 0.5;
+                });
+                for (int k = 0; k < depth; k++) {
+                    double z = minZ + delta * k;
+                    var secondtarget = target.FindAll(tp => {
+                        Vector3 vec = tp.GetVector3();
+                        return vec.z >= z && vec.z < z + delta;
+                    });
+                    var secondanothertarget = anothertarget.FindAll(tp => {
+                        Vector3 vec = tp.GetVector3();
+                        return vec.z >= z - delta * 0.5 && vec.z < z + delta * 0.5;
+                    });
+                    for (int j = 0; j < height; j++) {
+                        double y = minY + delta * j;
+                        var thirdtarget = secondtarget.FindAll(tp => {
+                            Vector3 vec = tp.GetVector3();
+                            return vec.y >= y && vec.y < y + delta;
+                        });
+                        var thirdanothertarget = secondanothertarget.FindAll(tp => {
+                            Vector3 vec = tp.GetVector3();
+                            return vec.y >= y - delta * 0.5 && vec.y < y + delta * 0.5;
+                        });
+                        voxels[index][i, j, k] = thirdtarget;
+                        anothervoxels[index][i, j, k] = thirdanothertarget;
+                    }
+                }
+            }
+        }
+
+        private void CalcCorrection() {
+            for (int i = 0; i < firstBodyParts.GetLength(0); i++) {
+                var positions = new Vector3[pointers.Count];
+                var thisPos = this.transform.position;
+                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                    //var diff = bodyList[pn][type] - bodyList[pn][JointType.SpineBase];
+                    var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
+                    var basePos = estimates[i % estimates.Length] + diff + offsets[i, (int)type] + partsCorrections[i][type];
+                    positions[(int)type] = basePos;
+                }
+                for (int j = 0; j < pointers.Count; j++) {
+                    firstBodyParts[i, j] = thisPos + positions[j];
+                }
+            }
+            var reworkIndexes = new List<int>();
+            for (int i = 0; i < offsets.GetLength(0); i++) {
+                for (int j = 0; j < offsets.GetLength(1); j++) {
+                    if (offsets[i,j] != Vector3.zero) {
+                        reworkIndexes.Add(i);
+                        break;
+                    }
+                }
+            }
+            ArmCorrection(reworkIndexes);
+            LegCorrection(reworkIndexes);
+        }
+
+        private void ArmCorrection(List<int> reworkIndexes) {
+            var partsNames = new[] { "Shoulder", "Elbow", "Wrist", "Hand", "HandTip", "Thumb" };
+            var partsNamesLeft = new string[partsNames.Length + 1];
+            var partsNamesRight = new string[partsNames.Length + 1];
+            for (int i = 0; i < partsNames.Length; i++) {
+                partsNamesLeft[i + 1] = partsNames[i] + "Left";
+                partsNamesRight[i + 1] = partsNames[i] + "Right";
+            }
+            partsNamesLeft[0] = "SpineShoulder";
+            partsNamesRight[0] = "SpineShoulder";
+            EitherArmCorrection(reworkIndexes, partsNamesLeft);
+            EitherArmCorrection(reworkIndexes, partsNamesRight);
+        }
+
+        private void LegCorrection(List<int> reworkIndexes) {
+            var partsNames = new[] { "Hip", "Knee", "Ankle", "Foot" };
+            var partsNamesLeft = new string[partsNames.Length + 1];
+            var partsNamesRight = new string[partsNames.Length + 1];
+            for (int i = 0; i < partsNames.Length; i++) {
+                partsNamesLeft[i + 1] = partsNames[i] + "Left";
+                partsNamesRight[i + 1] = partsNames[i] + "Right";
+            }
+            partsNamesLeft[0] = "SpineBase";
+            partsNamesRight[0] = "SpineBase";
+            EitherLegCorrection(reworkIndexes, partsNamesLeft);
+            EitherLegCorrection(reworkIndexes, partsNamesRight);
+        }
+
+        private void EitherArmCorrection(List<int> reworkIndexes, string[] joints) {
+            JointType[] partsTypes = joints.Select(p => (JointType)Enum.Parse(typeof(JointType), p)).ToArray();
+            for (int i = 0; i < reworkIndexes.Count - 1; i++) {
+                int firstIndex = reworkIndexes[i];
+                int nextIndex = reworkIndexes[i + 1];
+                for (int j = 0; j < partsTypes.Length - 1; j++) {
+                    JointType firstJoint = partsTypes[j];
+                    JointType nextJoint = partsTypes[j + 1];
+                    Vector3 firstIndexFirstJointVoxel = voxels[firstIndex].GetIndexFromPosition(firstBodyParts[firstIndex, (int)firstJoint] - this.transform.position);
+                    //Vector3 firstIndexNextJointVoxel = voxels[firstIndex].GetIndexFromPosition(firstBodyParts[firstIndex, (int)nextJoint] - this.transform.position);
+                    //Vector3 nextIndexFirstJointVoxel = voxels[nextIndex].GetIndexFromPosition(firstBodyParts[nextIndex, (int)firstJoint] - this.transform.position);
+                    //Vector3 nextIndexNextJointVoxel = voxels[nextIndex].GetIndexFromPosition(firstBodyParts[nextIndex, (int)nextJoint] - this.transform.position);
+                    var offsets = new[] {
+                        new Vector3(0, 0, 0),
+                        new Vector3(0, 0, 1),
+                        new Vector3(0, 0, -1),
+                        //new Vector3(0, 1, 1),
+                        //new Vector3(0, 1, -1),
+                        //new Vector3(0, -1, -1),
+                        //new Vector3(0, -1, 1),
+                        new Vector3(0, 1, 0),
+                        new Vector3(0, -1, 0),
+                        //new Vector3(1, 1, 0),
+                        //new Vector3(1, -1, 0),
+                        //new Vector3(-1, -1, 0),
+                        //new Vector3(-1, 1, 0),
+                        new Vector3(1, 0, 0),
+                        new Vector3(-1, 0, 0),
+                        //new Vector3(1, 0, 1),
+                        //new Vector3(1, 0, -1),
+                        //new Vector3(-1, 0, -1),
+                        //new Vector3(-1, 0, 1),
+                        //new Vector3(1, 1, 1),
+                        //new Vector3(1, 1, -1),
+                        //new Vector3(1, -1, -1),
+                        //new Vector3(1, -1, 1),
+                        //new Vector3(-1, -1, 1),
+                        //new Vector3(-1, 1, 1),
+                        //new Vector3(-1, 1, -1),
+                        //new Vector3(-1, -1, -1)
+                    };
+                    var neighbors = new List<List<Point>>();
+                    for (int k = 0; k < offsets.Length; k++) {
+                        Vector3 position = firstIndexFirstJointVoxel + offsets[k];
+                        if (voxels[firstIndex].IsWithinArray(position)) {
+                            var n = voxels[firstIndex][(int)position.x, (int)position.y, (int)position.z];
+                            neighbors.Add(n);
+                        }
+                    }
+                    print(neighbors.Sum(n => n.Count));
+                    //Vector3 firstVector = firstBodyParts[firstIndex, (int)nextJoint] - firstBodyParts[firstIndex, (int)firstJoint];
+                    //Vector3 nextVector = firstBodyParts[nextIndex, (int)nextJoint] - firstBodyParts[nextIndex, (int)firstJoint];
+                    //Vector3 moved = nextVector - firstVector;
+                    //int numbers = nextIndex - firstIndex - 1;
+                    //for (int k = firstIndex + 1; k < nextIndex; k++) {
+                    //    var result = (firstVector + moved * (k - firstIndex) / numbers).normalized * firstVector.magnitude;
+                    //    var minus = firstBodyParts[k, (int)nextJoint] - firstBodyParts[k, (int)firstJoint];
+                    //    partsCorrections[k][nextJoint] = result + partsCorrections[k][firstJoint] - minus;
+                    //}
+                }
+            }
+        }
+
+        private void EitherLegCorrection(List<int> reworkIndexes, string[] joints) {
+            JointType[] partsTypes = joints.Select(p => (JointType)Enum.Parse(typeof(JointType), p)).ToArray();
+            for (int i = 0; i < reworkIndexes.Count - 1; i++) {
+                int firstIndex = reworkIndexes[i];
+                int nextIndex = reworkIndexes[i + 1];
+                for (int j = 0; j < partsTypes.Length - 1; j++) {
+                    JointType firstJoint = partsTypes[j];
+                    JointType nextJoint = partsTypes[j + 1];
+                    //Vector3 firstVector = firstBodyParts[firstIndex, (int)nextJoint] - firstBodyParts[firstIndex, (int)firstJoint];
+                    //Vector3 nextVector = firstBodyParts[nextIndex, (int)nextJoint] - firstBodyParts[nextIndex, (int)firstJoint];
+                    //Vector3 moved = nextVector - firstVector;
+                    //int numbers = nextIndex - firstIndex - 1;
+                    //for (int k = firstIndex + 1; k < nextIndex; k++) {
+                    //    var result = (firstVector + moved * (k - firstIndex) / numbers).normalized * firstVector.magnitude;
+                    //    var minus = firstBodyParts[k, (int)nextJoint] - firstBodyParts[k, (int)firstJoint];
+                    //    partsCorrections[k][nextJoint] = result + partsCorrections[k][firstJoint] - minus;
+                    //}
+                }
+            }
+        }
+
+        void LoadModels(string dir) {
             string baseDir = $@"polygons\{dir}";
             int num = 0;
             while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
@@ -200,6 +456,8 @@ namespace EnvironmentMaker {
             estimates = new Vector3[num];
             partsCorrections = new Dictionary<JointType, Vector3>[num];
             var completeMerge = new Point[num][];
+            voxels = new Voxel<List<Point>>[num];
+            anothervoxels = new Voxel<List<Point>>[num];
             for (int n = 0; n < num; n++) {
                 var pointlist = new List<Point>[kinectNums];
                 var list = new List<Point>();
@@ -236,21 +494,18 @@ namespace EnvironmentMaker {
                 //ApplyXZ(pointlist);
                 tmpPoints[n] = pointlist.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
                 tmpColors[n] = pointlist.Select(c => c.Select(p => p.GetColor()).ToArray()).ToArray();
-                completeMerge[n] = list.ToArray();
+                completeMerge[n] = ReducePoints(list.ToArray());
+                PointToVoxel(list, n);
                 //yield return n;
-                int max = (int)Math.Sqrt(list.Count);
-                var tmpList = new List<Point>();
-                for (int i = 0; i < max; i++) {
-                    var point = list[Functions.GetRandomInt(list.Count)];
-                    tmpList.Add(point);
-                    list.Remove(point);
+                partsCorrections[n] = new Dictionary<JointType, Vector3>();
+                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                    partsCorrections[n][type] = Vector3.zero;
                 }
-                points[n] = tmpList.ToArray();
                 //yield return n;
             }
             walkPoints = tmpPoints.ToList();
             walkColors = tmpColors.ToList();
-            mergePoints = points.ToList();
+            mergePoints = completeMerge.ToList();// points.ToList();
             var sborder = BorderPoints(completeMerge[0].ToList());
             ////yield return 0;
             var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
@@ -264,11 +519,31 @@ namespace EnvironmentMaker {
                 //CalcPartsCorrection(completeMerge[i].ToList(), i);
             }
             var diff = Functions.AverageVector(completeMerge[0].Select(p => p.GetVector3()).ToList());
-            //print(diff);
+            var bayes = new Bayes();
+            List<Vector2> result = bayes.BayesEstimate(completeMerge[0].Select(p => p.GetVector3()).Select(p => new Vector2(p.x, p.z)).ToList());
+            var firstPoint = result.First();
+            var lastPoint = result.Last();
+            bodyLine = new TwoDLine((lastPoint.y - firstPoint.y) / (lastPoint.x - firstPoint.x), (firstPoint.y * lastPoint.x - firstPoint.x * lastPoint.y) / (lastPoint.x - firstPoint.x));
             this.transform.position -= diff;
             firstPosition = this.transform.position;
             loadEnd = true;
-            yield return 0;
+        }
+
+        Point[] ReducePoints(Point[] points) {
+            var result = new List<Point>();
+            var tmp = new List<Point>();
+            int max = points.Length / 10;
+            var rand = new System.Random();
+            foreach (var p in points) {
+                tmp.Add(p);
+            }
+            for (int i = 0; i < max; i++) {
+                var point = tmp[rand.Next(tmp.Count)];
+                result.Add(point);
+                tmp.Remove(point);
+            }
+
+            return result.ToArray();
         }
 
         void LoadIndexCSV(string dir) {
@@ -319,16 +594,6 @@ namespace EnvironmentMaker {
             } else {
                 estimates[index] = Vector3.zero;
             }
-        }
-
-        void InitPartsCorrection() {
-            for (int i = 0; i < partsCorrections.Length; i++) {
-                partsCorrections[i] = new Dictionary<JointType, Vector3>();
-            }
-        }
-
-        void CalcPartsCorrection(List<Point> points, int index) {
-            Arms(points, index);
         }
 
         MyTime ParseTime(string str) {
@@ -451,33 +716,6 @@ namespace EnvironmentMaker {
                         points[i][j] = new Point(moved, color);
                     }
                 }
-                //if (i == 1 || i == 2) {
-                //    var vec2s = vec3s.Select(v => new Vector2(v.x, v.z)).ToList();
-                //    List<Vector2> baseVecs;
-                //    int vecIndex, index;
-                //    Vector2 vec, diff, baseVec;
-                //    if (i == 1) {
-                //        var baseBorder = BorderPoints(points[3]);
-                //        var baseMinIndex = baseBorder.IndexOfMin(s => Math.Abs(s.Average(v => v.Y)));
-                //        var baseMin = baseBorder[baseMinIndex];
-                //        baseVecs = baseMin.Select(p => p.GetVector3()).Select(v => new Vector2(v.x, v.z)).ToList();
-                //        index = baseVecs.IndexOfMax(b => b.y);
-                //        vecIndex = vec2s.IndexOfMax(b => b.y);
-                //    } else {
-                //        var baseBorder = BorderPoints(points[0]);
-                //        var baseMinIndex = baseBorder.IndexOfMin(s => Math.Abs(s.Average(v => v.Y)));
-                //        var baseMin = baseBorder[baseMinIndex];
-                //        baseVecs = baseMin.Select(p => p.GetVector3()).Select(v => new Vector2(v.x, v.z)).ToList();
-                //        index = baseVecs.IndexOfMin(b => b.y);
-                //        vecIndex = vec2s.IndexOfMin(b => b.y);
-                //    }
-                //    baseVec = baseVecs[index];
-                //    vec = vec2s[vecIndex];
-                //    diff = vec - baseVec;
-                //    for (int j = 0; j < points[i].Count; j++) {
-                //        points[i][j] -= new Vector3(diff.x, 0, diff.y);
-                //    }
-                //}
             }
         }
 
@@ -511,129 +749,28 @@ namespace EnvironmentMaker {
             return diffs.Median();
         }
 
-        Vector3 ApplyPointerPos(List<Point> points, Vector3 position, JointType joint) {
-            string jointName = Enum.GetName(typeof(JointType), joint);
-            var list = points.FindAll(l => Math.Abs(position.y - l.GetVector3().y) < 0.8);
-            var medianXZ = list.Median(l => l.X + l.Z);
-            double number = 0.8;
-            var beforePoint = position;
-            if (jointName.Contains("Right")) {
-                switch (joint) {
-                    case JointType.ShoulderRight:
-                    case JointType.ElbowRight:
-                    case JointType.WristRight:
-                    case JointType.HandTipRight:
-                    case JointType.ThumbRight:
-                    case JointType.HandRight: number = 0.1; break;
-                    case JointType.HipRight:
-                    case JointType.KneeRight:
-                    case JointType.AnkleRight:
-                    case JointType.FootRight:
-                    default: break;
+        private void OnGUI() {
+            GUI.TextArea(new Rect(0, 0, 100, 20), "選択中");
+            GUI.TextArea(new Rect(0, 20, 100, 20), Enum.GetName(typeof(JointType), selectedType));
+
+            if (stopped) {
+                int before = pointsNumbers[0];
+                pointsNumbers[0] = (int)GUI.HorizontalScrollbar(new Rect(0, 580, 800, 20), before, 1, 0, mergePoints.Count);
+                if (before != pointsNumbers[0]) {
+                    AdjustStopCamera(before);
                 }
-                var tmp = list.FindAll(l => l.X + l.Z < medianXZ);
-                var point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
-                while ((point - beforePoint).sqrMagnitude > number * number) {
-                    beforePoint = point;
-                    tmp = tmp.FindAll(l => l.GetVector3().x <= point.x && l.GetVector3().z <= point.z);
-                    if (tmp.Count == 0) break;
-                    point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
-                }
-                return new Vector3(point.x, position.y, point.z);
-            } else if (jointName.Contains("Left")) {
-                switch (joint) {
-                    case JointType.ShoulderLeft:
-                    case JointType.ElbowLeft:
-                    case JointType.WristLeft:
-                    case JointType.HandTipLeft:
-                    case JointType.ThumbLeft:
-                    case JointType.HandLeft: number = 0.1; break;
-                    case JointType.HipLeft:
-                    case JointType.KneeLeft:
-                    case JointType.AnkleLeft:
-                    case JointType.FootLeft:
-                    default: break;
-                }
-                var tmp = list.FindAll(l => l.X + l.Z > medianXZ);
-                var point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
-                while ((point - beforePoint).sqrMagnitude > number * number) {
-                    beforePoint = point;
-                    tmp = tmp.FindAll(l => l.GetVector3().x >= point.x && l.GetVector3().z >= point.z);
-                    if (tmp.Count == 0) break;
-                    point = Functions.AverageVector(tmp.Select(t => t.GetVector3()).ToList());
-                }
-                return new Vector3(point.x, position.y, point.z);
-            } else {
-                return position;
             }
         }
 
-        Vector3 ShoulderPoint(List<Point> points) {
-            var average = points.Average(r => r.Y);
-            var upper = points.FindAll(r => r.Y > average);
-            for (int i = 0; i < 2 && upper.Count > 10; i++) {
-                average = upper.Average(r => r.Y);
-                upper = upper.FindAll(r => r.Y > average);
+        private void AdjustStopCamera(int before) {
+            UpdateMesh();
+            for (int i = 1; i < kinectNums; i++) {
+                pointsNumbers[i] = pointsNumbers[0];
             }
-            return Functions.AverageVector(upper.Select(s => s.GetVector3()).ToList());
-        }
-
-        void Arms(List<Point> points, int index) {
-            var rightArm = new List<Point>();
-            var leftArm = new List<Point>();
-            var line = LeastSquareMethod(points.ToList());
-            float minX = points.Min(p => p.GetVector3().x);
-            float maxX = points.Max(p => p.GetVector3().x);
-            var minVec = new Vector2(minX, line.CalcY(minX));
-            var vecs = new List<Point>();
-            foreach (var p in points) {
-                vecs.Add(p);
-            }
-            var lists = new List<List<Point>>();
-            var delta = 0.04;
-            double length = delta;
-            while (vecs.Count > 0) {
-                var tmp = vecs.FindAll(v => (v.GetXZVector() - minVec).sqrMagnitude < length * length).ToList();
-                tmp.ForEach(t => vecs.Remove(t));
-                if (tmp.Count > 0) {
-                    lists.Add(tmp);
-                }
-                length += delta;
-            }
-            bool right = true;
-            foreach (var l in lists) {
-                var averageY = l.Average(p => p.Y);
-                var varianceY = l.Average(p => Math.Pow(p.Y - averageY, 2));
-                if (varianceY < 100000) {
-                    if (right)
-                        l.ForEach(p => rightArm.Add(p));
-                    else
-                        l.ForEach(p => leftArm.Add(p));
-                } else {
-                    right = false;
-                }
-            }
-
-            if (rightArm.Count > 0)
-                partsCorrections[index][JointType.ShoulderRight] = ShoulderPoint(rightArm);
-            if (leftArm.Count > 0)
-                partsCorrections[index][JointType.ShoulderLeft] = ShoulderPoint(leftArm);
-
-            var rightXZ = rightArm.Select(r => new Vector2(r.X, r.Z)).ToList();
-            var rightXY = rightArm.Select(r => new Vector2(r.X, r.Y)).ToList();
-            var rightXZLine = TwoDLine.LeastSquareMethod(rightXZ);
-            var rightXYLine = TwoDLine.LeastSquareMethod(rightXY);
-            var direction = Functions.CrossProduct(new Vector3((float)rightXZLine.A, 0, -1), new Vector3((float)rightXYLine.A, -1, 0));
-            print(direction);
-        }
-
-        TwoDLine LeastSquareMethod(List<Point> points) {
-            var data = new List<Vector2>();
-            foreach (var p in points) {
-                var vec = p.GetVector3();
-                data.Add(new Vector2(vec.x, vec.z));
-            }
-            return TwoDLine.LeastSquareMethod(data);
+            Vector3 nowCenter = Functions.AverageVector(mergePoints[pointsNumbers[0]].Select(mp => mp.GetVector3()).ToList());
+            Vector3 beforeCenter = Functions.AverageVector(mergePoints[before].Select(mp => mp.GetVector3()).ToList());
+            Vector3 moved = nowCenter - beforeCenter;
+            MainCamera.transform.position += moved;
         }
     }
 }

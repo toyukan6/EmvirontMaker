@@ -42,6 +42,25 @@ namespace EnvironmentMaker {
             return new Color(red, green, blue, alpha);
         }
 
+        public static Point AveragePoint(List<Point> vecs) {
+            float x = 0, y = 0, z = 0, r = 0, g = 0, b = 0;
+            foreach (var v in vecs) {
+                x += v.X;
+                y += v.Y;
+                z += v.Z;
+                r += v.Red;
+                g += v.Green;
+                b += v.Blue;
+            }
+            x /= vecs.Count;
+            y /= vecs.Count;
+            z /= vecs.Count;
+            r /= vecs.Count;
+            g /= vecs.Count;
+            b /= vecs.Count;
+            return new Point(x, y, z, (byte)r, (byte)g, (byte)b);
+        }
+
         public static Vector3 AverageVector(List<Vector3> vecs) {
             if (vecs.Count > 0) {
                 float x = 0, y = 0, z = 0;

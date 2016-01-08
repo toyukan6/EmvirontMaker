@@ -274,7 +274,7 @@ namespace EnvironmentMaker {
         int waitFrame = 0;
 
         private Vector3 GetScreenPos(Vector3 basePos) {
-            var pos = Input.mousePosition - new Vector3(Screen.width, Screen.height, 0) / 2;
+            var pos = basePos - new Vector3(Screen.width, Screen.height, 0) / 2;
             var screenPos = Camera.main.ScreenToViewportPoint(pos);
             var worldPos = Camera.main.ScreenToWorldPoint(pos);
             screenPos.z = screenPos.y;
