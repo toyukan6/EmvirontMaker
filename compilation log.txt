@@ -1,19 +1,19 @@
 ********************************************************************************
-*                    Thursday, January 14, 2016 12:33:16 PM                    *
+*                    Thursday, January 14, 2016 5:57:10 PM                     *
 ********************************************************************************
 smcs.exe version: 1.5.3.0
 Platform: Windows
 Target assembly: Assembly-CSharp.dll
-Project directory: C:\Users\toyuk\Documents\kyodai\EmvirontMaker
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
 Unity directory: C:/Program Files/Unity/Editor/Data
 Compiler: Version6Microsoft
 
 - Compilation -----------------------------------------------
 
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/csc.exe
-Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-fb3118f4082b016469f196d00f07a038
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-33eb9aa983e7f244fbb2cecae807aec2
 Exit code: 0
-Elapsed time: 4.73 sec
+Elapsed time: 1.04 sec
 
 - Compiler output:
 0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
@@ -29,171 +29,57 @@ Elapsed time: 4.73 sec
 6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
 7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
 8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-9: Assets\Scripts\AdjustBody.cs(29,27): warning CS0649: Field 'AdjustBody.Selected' is never assigned to, and will always have its default value null
+9: Assets\Scripts\AdjustBody.cs(32,27): warning CS0649: Field 'AdjustBody.OverViewCamera' is never assigned to, and will always have its default value null
 10: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
-11: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
-12: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
-13: Assets\Scripts\Player.cs(145,27): warning CS0649: Field 'Player.PointCloudPrehab' is never assigned to, and will always have its default value null
-14: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.baseGround' is never assigned to, and will always have its default value null
-15: Assets\Scripts\PointCloud.cs(17,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
-16: Assets\Scripts\Realtime.cs(17,23): warning CS0649: Field 'Realtime.bodyposes' is never assigned to, and will always have its default value null
-17: Assets\Scripts\AdjustBody.cs(16,27): warning CS0649: Field 'AdjustBody.Pointer' is never assigned to, and will always have its default value null
-18: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
-19: Assets\Scripts\AdjustBody.cs(14,23): warning CS0649: Field 'AdjustBody.bodyposes' is never assigned to, and will always have its default value null
-20: Assets\Scripts\AdjustBody.cs(32,27): warning CS0649: Field 'AdjustBody.OverViewCamera' is never assigned to, and will always have its default value null
-21: Assets\Scripts\AdjustBody.cs(31,27): warning CS0649: Field 'AdjustBody.MainCamera' is never assigned to, and will always have its default value null
-22: Assets\Scripts\PointCloud.cs(27,17): warning CS0649: Field 'PointCloud.firstPosition' is never assigned to, and will always have its default value
-23: Assets\Scripts\Realtime.cs(19,27): warning CS0649: Field 'Realtime.Pointer' is never assigned to, and will always have its default value null
-24: Assets\Scripts\PointCloud.cs(25,13): warning CS0414: The field 'PointCloud.nextRouteIndex' is assigned but its value is never used
-25: Assets\Scripts\Realtime.cs(27,13): warning CS0414: The field 'Realtime.nextRouteIndex' is assigned but its value is never used
-26: Assets\Scripts\Realtime.cs(28,15): warning CS0414: The field 'Realtime.length' is assigned but its value is never used
-27: Assets\Scripts\AdjustBody.cs(21,14): warning CS0414: The field 'AdjustBody.looped' is assigned but its value is never used
-28: Assets\Scripts\PointCloud.cs(100,16): warning CS0414: The field 'PointCloud.beforeMag' is assigned but its value is never used
-29: Assets\Scripts\Player.cs(705,13): warning CS0414: The field 'Player.beforeHeight' is assigned but its value is never used
-30: Assets\Scripts\Realtime.cs(62,16): warning CS0414: The field 'Realtime.beforeMag' is assigned but its value is never used
-31: Assets\Scripts\AdjustBody.cs(23,13): warning CS0414: The field 'AdjustBody.nextRouteIndex' is assigned but its value is never used
-32: Assets\Scripts\Player.cs(704,13): warning CS0414: The field 'Player.beforeWidth' is assigned but its value is never used
-33: Assets\Scripts\AdjustBody.cs(91,16): warning CS0414: The field 'AdjustBody.beforeMag' is assigned but its value is never used
-34: Assets\Scripts\AdjustBody.cs(24,15): warning CS0414: The field 'AdjustBody.length' is assigned but its value is never used
-
-- PDB to MDB conversion --------------------------------------
-
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/pdb2mdb.exe
-Arguments: Temp\Assembly-CSharp.dll
-Elapsed time: 0.23 sec
-
-- pdb2mdb.exe output:
-
-********************************************************************************
-*                    Thursday, January 14, 2016 12:33:22 PM                    *
-********************************************************************************
-smcs.exe version: 1.5.3.0
-Platform: Windows
-Target assembly: Assembly-CSharp-firstpass.dll
-Project directory: C:\Users\toyuk\Documents\kyodai\EmvirontMaker
-Unity directory: C:/Program Files/Unity/Editor/Data
-Compiler: Version6Microsoft
-
-- Compilation -----------------------------------------------
-
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/csc.exe
-Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-55be3a1d687117a47ab1f7cf4e99f4d9
-Exit code: 0
-Elapsed time: 4.18 sec
-
-- Compiler output:
-0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
-1: Copyright (C) Microsoft Corporation. All rights reserved.
-
-- Compiler errors:
-0: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(17,23): warning CS0649: Field 'FirstPersonController.m_WalkSpeed' is never assigned to, and will always have its default value 0
-1: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(30,27): warning CS0649: Field 'FirstPersonController.m_MouseLook' is never assigned to, and will always have its default value null
-2: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(36,22): warning CS0649: Field 'FirstPersonController.m_UseHeadBob' is never assigned to, and will always have its default value false
-3: Assets\Standard Assets\Utility\SmoothFollow.cs(21,17): warning CS0649: Field 'SmoothFollow.heightDamping' is never assigned to, and will always have its default value 0
-4: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(46,27): warning CS0649: Field 'FirstPersonController.m_JumpSound' is never assigned to, and will always have its default value null
-5: Assets\Standard Assets\Utility\WaypointProgressTracker.cs(14,50): warning CS0649: Field 'WaypointProgressTracker.circuit' is never assigned to, and will always have its default value null
-6: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(28,23): warning CS0649: Field 'FirstPersonController.m_GravityMultiplier' is never assigned to, and will always have its default value 0
-7: Assets\Standard Assets\Utility\SmoothFollow.cs(19,17): warning CS0649: Field 'SmoothFollow.rotationDamping' is never assigned to, and will always have its default value 0
-8: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(32,22): warning CS0649: Field 'FirstPersonController.m_UseFovKick' is never assigned to, and will always have its default value false
-9: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(22,23): warning CS0649: Field 'FirstPersonController.m_RunstepLenghten' is never assigned to, and will always have its default value 0
-10: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(44,29): warning CS0649: Field 'FirstPersonController.m_FootstepSounds' is never assigned to, and will always have its default value null
-11: Assets\Standard Assets\Utility\SmoothFollow.cs(10,21): warning CS0649: Field 'SmoothFollow.target' is never assigned to, and will always have its default value null
-12: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(19,23): warning CS0649: Field 'FirstPersonController.m_RunSpeed' is never assigned to, and will always have its default value 0
-13: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(42,23): warning CS0649: Field 'FirstPersonController.m_StepInterval' is never assigned to, and will always have its default value 0
-14: Assets\Standard Assets\Characters\FirstPersonCharacter\Scripts\FirstPersonController.cs(48,27): warning CS0649: Field 'FirstPersonController.m_LandSound' is never assigned to, and will always have its default value null
-15: Assets\Standard Assets\Utility\PlatformSpecificContent.cs(24,39): warning CS0649: Field 'PlatformSpecificContent.m_ChildrenOfThisObject' is never assigned to, and will always have its default value false
-16: Assets\Standard Assets\Utility\PlatformSpecificContent.cs(21,51): warning CS0649: Field 'PlatformSpecificContent.m_BuildTargetGroup' is never assigned to, and will always have its default value
-
-- PDB to MDB conversion --------------------------------------
-
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/pdb2mdb.exe
-Arguments: Temp\Assembly-CSharp-firstpass.dll
-Elapsed time: 2491.16 sec
-
-- pdb2mdb.exe output:
-
-********************************************************************************
-*                    Thursday, January 14, 2016 1:15:00 PM                     *
-********************************************************************************
-smcs.exe version: 1.5.3.0
-Platform: Windows
-Target assembly: Assembly-CSharp.dll
-Project directory: C:\Users\toyuk\Documents\kyodai\EmvirontMaker
-Unity directory: C:/Program Files/Unity/Editor/Data
-Compiler: Version6Microsoft
-
-- Compilation -----------------------------------------------
-
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/csc.exe
-Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-1ebf30c18ee1e49429b2f2b1c973c7e3
-Exit code: 0
-Elapsed time: 6.01 sec
-
-- Compiler output:
-0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
-1: Copyright (C) Microsoft Corporation. All rights reserved.
-
-- Compiler errors:
-0: Assets\UnityChan\Scripts\IdleChanger.cs(57,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-1: Assets\UnityChan\Scripts\IdleChanger.cs(57,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-2: Assets\UnityChan\Scripts\IdleChanger.cs(67,34): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-3: Assets\UnityChan\Scripts\IdleChanger.cs(67,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-4: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(95,8): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-5: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(116,7): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-6: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(124,11): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-7: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(165,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-8: Assets\UnityChan\Scripts\UnityChanControlScriptWithRgidBody.cs(178,12): warning CS0618: 'AnimatorStateInfo.nameHash' is obsolete: 'Use AnimatorStateInfo.fullPathHash instead.'
-9: Assets\Scripts\AdjustBody.cs(29,27): warning CS0649: Field 'AdjustBody.Selected' is never assigned to, and will always have its default value null
-10: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
-11: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.baseGround' is never assigned to, and will always have its default value null
-12: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
-13: Assets\Scripts\PointCloud.cs(17,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
-14: Assets\Scripts\Realtime.cs(17,23): warning CS0649: Field 'Realtime.bodyposes' is never assigned to, and will always have its default value null
-15: Assets\Scripts\Player.cs(37,27): warning CS0649: Field 'Player.SpritePrehab' is never assigned to, and will always have its default value null
-16: Assets\Scripts\AdjustBody.cs(32,27): warning CS0649: Field 'AdjustBody.OverViewCamera' is never assigned to, and will always have its default value null
+11: Assets\Scripts\AdjustBody.cs(16,27): warning CS0649: Field 'AdjustBody.Pointer' is never assigned to, and will always have its default value null
+12: Assets\Scripts\AdjustBody.cs(31,27): warning CS0649: Field 'AdjustBody.MainCamera' is never assigned to, and will always have its default value null
+13: Assets\Scripts\AdjustBody.cs(29,27): warning CS0649: Field 'AdjustBody.Selected' is never assigned to, and will always have its default value null
+14: Assets\Scripts\PointCloud.cs(17,23): warning CS0649: Field 'PointCloud.bodyposes' is never assigned to, and will always have its default value null
+15: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
+16: Assets\Scripts\AdjustBody.cs(14,23): warning CS0649: Field 'AdjustBody.bodyposes' is never assigned to, and will always have its default value null
 17: Assets\Scripts\Realtime.cs(19,27): warning CS0649: Field 'Realtime.Pointer' is never assigned to, and will always have its default value null
-18: Assets\Scripts\Player.cs(145,27): warning CS0649: Field 'Player.PointCloudPrehab' is never assigned to, and will always have its default value null
-19: Assets\Scripts\PointCloud.cs(27,17): warning CS0649: Field 'PointCloud.firstPosition' is never assigned to, and will always have its default value
-20: Assets\Scripts\Player.cs(101,27): warning CS0649: Field 'Player.CubePrehab' is never assigned to, and will always have its default value null
-21: Assets\Scripts\AdjustBody.cs(31,27): warning CS0649: Field 'AdjustBody.MainCamera' is never assigned to, and will always have its default value null
-22: Assets\Scripts\AdjustBody.cs(14,23): warning CS0649: Field 'AdjustBody.bodyposes' is never assigned to, and will always have its default value null
-23: Assets\Scripts\AdjustBody.cs(16,27): warning CS0649: Field 'AdjustBody.Pointer' is never assigned to, and will always have its default value null
-24: Assets\Scripts\Player.cs(704,13): warning CS0414: The field 'Player.beforeWidth' is assigned but its value is never used
-25: Assets\Scripts\AdjustBody.cs(91,16): warning CS0414: The field 'AdjustBody.beforeMag' is assigned but its value is never used
-26: Assets\Scripts\AdjustBody.cs(23,13): warning CS0414: The field 'AdjustBody.nextRouteIndex' is assigned but its value is never used
-27: Assets\Scripts\PointCloud.cs(100,16): warning CS0414: The field 'PointCloud.beforeMag' is assigned but its value is never used
-28: Assets\Scripts\AdjustBody.cs(21,14): warning CS0414: The field 'AdjustBody.looped' is assigned but its value is never used
-29: Assets\Scripts\Realtime.cs(62,16): warning CS0414: The field 'Realtime.beforeMag' is assigned but its value is never used
-30: Assets\Scripts\PointCloud.cs(25,13): warning CS0414: The field 'PointCloud.nextRouteIndex' is assigned but its value is never used
-31: Assets\Scripts\AdjustBody.cs(24,15): warning CS0414: The field 'AdjustBody.length' is assigned but its value is never used
-32: Assets\Scripts\Realtime.cs(27,13): warning CS0414: The field 'Realtime.nextRouteIndex' is assigned but its value is never used
-33: Assets\Scripts\Player.cs(705,13): warning CS0414: The field 'Player.beforeHeight' is assigned but its value is never used
-34: Assets\Scripts\Realtime.cs(28,15): warning CS0414: The field 'Realtime.length' is assigned but its value is never used
+18: Assets\Scripts\Player.cs(129,27): warning CS0649: Field 'Player.baseGround' is never assigned to, and will always have its default value null
+19: Assets\Scripts\Player.cs(121,27): warning CS0649: Field 'Player.iconPrehab' is never assigned to, and will always have its default value null
+20: Assets\Scripts\PointCloud.cs(27,17): warning CS0649: Field 'PointCloud.firstPosition' is never assigned to, and will always have its default value
+21: Assets\Scripts\Player.cs(125,27): warning CS0649: Field 'Player.Back' is never assigned to, and will always have its default value null
+22: Assets\Scripts\Realtime.cs(17,23): warning CS0649: Field 'Realtime.bodyposes' is never assigned to, and will always have its default value null
+23: Assets\Scripts\Player.cs(145,27): warning CS0649: Field 'Player.PointCloudPrehab' is never assigned to, and will always have its default value null
+24: Assets\Scripts\Player.cs(705,13): warning CS0414: The field 'Player.beforeHeight' is assigned but its value is never used
+25: Assets\Scripts\AdjustBody.cs(24,15): warning CS0414: The field 'AdjustBody.length' is assigned but its value is never used
+26: Assets\Scripts\Realtime.cs(28,15): warning CS0414: The field 'Realtime.length' is assigned but its value is never used
+27: Assets\Scripts\PointCloud.cs(25,13): warning CS0414: The field 'PointCloud.nextRouteIndex' is assigned but its value is never used
+28: Assets\Scripts\PointCloud.cs(100,16): warning CS0414: The field 'PointCloud.beforeMag' is assigned but its value is never used
+29: Assets\Scripts\AdjustBody.cs(21,14): warning CS0414: The field 'AdjustBody.looped' is assigned but its value is never used
+30: Assets\Scripts\Realtime.cs(27,13): warning CS0414: The field 'Realtime.nextRouteIndex' is assigned but its value is never used
+31: Assets\Scripts\AdjustBody.cs(91,16): warning CS0414: The field 'AdjustBody.beforeMag' is assigned but its value is never used
+32: Assets\Scripts\Player.cs(704,13): warning CS0414: The field 'Player.beforeWidth' is assigned but its value is never used
+33: Assets\Scripts\AdjustBody.cs(23,13): warning CS0414: The field 'AdjustBody.nextRouteIndex' is assigned but its value is never used
+34: Assets\Scripts\Realtime.cs(62,16): warning CS0414: The field 'Realtime.beforeMag' is assigned but its value is never used
 
 - PDB to MDB conversion --------------------------------------
 
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/pdb2mdb.exe
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
 Arguments: Temp\Assembly-CSharp.dll
-Elapsed time: 0.27 sec
+Elapsed time: 0.21 sec
 
 - pdb2mdb.exe output:
 
 ********************************************************************************
-*                    Thursday, January 14, 2016 1:15:08 PM                     *
+*                    Thursday, January 14, 2016 5:57:12 PM                     *
 ********************************************************************************
 smcs.exe version: 1.5.3.0
 Platform: Windows
 Target assembly: Assembly-CSharp-Editor.dll
-Project directory: C:\Users\toyuk\Documents\kyodai\EmvirontMaker
+Project directory: C:\Users\admin\Documents\unity\EmvirontMaker
 Unity directory: C:/Program Files/Unity/Editor/Data
 Compiler: Version6Microsoft
 
 - Compilation -----------------------------------------------
 
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/csc.exe
-Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-18f0da22799531f4daf74d9484987ae3
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/csc.exe
+Arguments: -nostdlib+ -noconfig -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/mscorlib.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Core.dll" -r:"C:/Program Files/Unity/Editor/Data\Mono/lib/mono/2.0/System.Xml.dll" @Temp/UnityTempFile-388ec23c097c17745a60f53b6ea556f6
 Exit code: 0
-Elapsed time: 6.11 sec
+Elapsed time: 0.44 sec
 
 - Compiler output:
 0: Microsoft (R) Visual C# Compiler version 1.0.0.50618
@@ -203,9 +89,9 @@ Elapsed time: 6.11 sec
 
 - PDB to MDB conversion --------------------------------------
 
-Process: C:\Users\toyuk\Documents\kyodai\EmvirontMaker\Roslyn/pdb2mdb.exe
+Process: C:\Users\admin\Documents\unity\EmvirontMaker\Roslyn/pdb2mdb.exe
 Arguments: Temp\Assembly-CSharp-Editor.dll
-Elapsed time: 0.26 sec
+Elapsed time: 0.13 sec
 
 - pdb2mdb.exe output:
 

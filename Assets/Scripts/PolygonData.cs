@@ -162,7 +162,7 @@ namespace EnvironmentMaker {
         Vector3 SearchHistgramFunction(double[] histgram, double[,,][] targetHist, double[,,][] targetAHist, Vector3 index) {
             Vector3 result = Vector3.zero, anotherResult = Vector3.zero;
             double minLength = double.MaxValue, anotherminLength = double.MaxValue;
-            int depth = 4;
+            int depth = 2;
             int minX = (int)Math.Max(index.x - depth, 0);
             int maxX = (int)Math.Min(index.x + depth, Histgram.GetLength(0));
             int minY = (int)Math.Max(index.y - depth, 0);
