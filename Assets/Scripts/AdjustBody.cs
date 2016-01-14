@@ -11,15 +11,11 @@ namespace EnvironmentMaker {
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     class AdjustBody : MonoBehaviour {
         PlyReader reader;
-        List<Vector3[][]> walkPoints;
-        List<Color[][]> walkColors;
-        List<Point[]> mergePoints;
         List<Vector3> bodyposes;
         int kinectNums = 4;
         public GameObject Pointer;
         List<GameObject> pointers = new List<GameObject>();
         Vector3[] estimates;
-        Dictionary<JointType, Vector3>[] partsCorrections;
         List<Dictionary<JointType, Vector3>> bodyList;
         bool loadEnd = false;
         bool looped = false;
@@ -34,8 +30,6 @@ namespace EnvironmentMaker {
         private GameObject selectedPointer;
         public GameObject MainCamera;
         public GameObject OverViewCamera;
-        private Vector3[,] firstJoint;
-        private Vector3[,] offsets;
         private Vector3 stopPosition;
         private Vector3 stopEularAngle;
         private Vector3 movePosition;
@@ -43,8 +37,9 @@ namespace EnvironmentMaker {
         private bool stopped = true;
         private int baseIndex;
         private Vector3[,] firstBodyParts;
-        private Voxel<List<Point>>[] voxels;
-        private Voxel<List<Point>>[] anothervoxels;
+        private PolygonData[] polygonData;
+        private int FrameAmount;
+        private PolygonManager manager;
 
         private Mesh mesh;
 
@@ -52,14 +47,13 @@ namespace EnvironmentMaker {
         int[] pointsNumbers;
         List<MyTime[]> fileTimes;
 
-        public string DirName = "newpolygons";
+        public string DirName = "result";
+        private string tmpDirName;
 
         // Use this for initialization
         void Start() {
             mesh = new Mesh();
             reader = new PlyReader();
-            walkPoints = new List<Vector3[][]>();
-            walkColors = new List<Color[][]>();
             fileTimes = new List<MyTime[]>();
             beforeTime = new int[kinectNums];
             pointsNumbers = new int[kinectNums];
@@ -79,33 +73,18 @@ namespace EnvironmentMaker {
             }
             var positions = new Vector3[pointers.Count];
             var thisPos = this.transform.position;
-            firstJoint = new Vector3[walkPoints.Count, Enum.GetNames(typeof(JointType)).Length];
-            for (int i = walkPoints.Count - 1; i >= 0; i--) {
-                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    var diff = bodyList[i][type] - bodyList[i][(int)JointType.SpineBase];
-                    var basePos = estimates[i % estimates.Length] + diff;
-                    positions[(int)type] = basePos;
-                }
-                for (int j = 0; j < firstJoint.GetLength(1); j++) {
-                    firstJoint[i, j] = thisPos + positions[j];
-                }
+            foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                pointers[(int)type].transform.position = PartsPosition(type, 0);
             }
-            for (int i = 0; i < positions.Length; i++) {
-                pointers[i].transform.position = thisPos + positions[i];
-            }
-            offsets = new Vector3[walkPoints.Count, Enum.GetNames(typeof(JointType)).Length];
-            for (int i = 0; i < offsets.GetLength(0); i++) {
-                for (int j = 0; j < offsets.GetLength(1); j++) {
-                    offsets[i, j] = Vector3.zero;
-                }
-            }
-            firstBodyParts = new Vector3[walkPoints.Count, Enum.GetNames(typeof(JointType)).Length];
+            firstBodyParts = new Vector3[FrameAmount, Enum.GetNames(typeof(JointType)).Length];
             baseIndex = 0;
             selectedPointer = Instantiate(Selected);
             stopPosition = this.transform.position;
             stopEularAngle = this.transform.localEulerAngles;
             movePosition = new Vector3(1.1f, 1.4f, -1);
             moveEularAngle = new Vector3(0, 0, 0);
+            manager = GameObject.FindObjectOfType<PolygonManager>();
+            tmpDirName = DirName;
             UpdateMesh();
         }
 
@@ -116,17 +95,17 @@ namespace EnvironmentMaker {
                 GameObject selectedObj = pointers[(int)selectedType];
 
                 if (Input.GetKey(KeyCode.D)) {
-                    offsets[number, (int)selectedType] += new Vector3(0.01f, 0, 0);
+                    polygonData[number].Offsets[selectedType] += new Vector3(0.01f, 0, 0);
                 } else if (Input.GetKey(KeyCode.A)) {
-                    offsets[number, (int)selectedType] -= new Vector3(0.01f, 0, 0);
+                    polygonData[number].Offsets[selectedType] -= new Vector3(0.01f, 0, 0);
                 } else if (Input.GetKey(KeyCode.W)) {
-                    offsets[number, (int)selectedType] += new Vector3(0, 0, 0.01f);
+                    polygonData[number].Offsets[selectedType] += new Vector3(0, 0, 0.01f);
                 } else if (Input.GetKey(KeyCode.S)) {
-                    offsets[number, (int)selectedType] -= new Vector3(0, 0, 0.01f);
+                    polygonData[number].Offsets[selectedType] -= new Vector3(0, 0, 0.01f);
                 } else if (Input.GetKey(KeyCode.X)) {
-                    offsets[number, (int)selectedType] += new Vector3(0, 0.01f, 0);
+                    polygonData[number].Offsets[selectedType] += new Vector3(0, 0.01f, 0);
                 } else if (Input.GetKey(KeyCode.Z)) {
-                    offsets[number, (int)selectedType] -= new Vector3(0, 0.01f, 0);
+                    polygonData[number].Offsets[selectedType] -= new Vector3(0, 0.01f, 0);
                 }
 
                 //selectedObj.transform.position = firstJoint[number, (int)selectedType] + offsets[number, (int)selectedType];
@@ -140,9 +119,9 @@ namespace EnvironmentMaker {
 
                 int before = pointsNumbers[0];
                 if (Input.GetKeyDown(KeyCode.RightArrow)) {
-                    pointsNumbers[0] = (pointsNumbers[0] + 1) % walkPoints.Count;
+                    pointsNumbers[0] = (pointsNumbers[0] + 1) % FrameAmount;
                 } else if (Input.GetKeyDown(KeyCode.LeftArrow)) {
-                    pointsNumbers[0] = (pointsNumbers[0] - 1 + walkPoints.Count) % walkPoints.Count;
+                    pointsNumbers[0] = (pointsNumbers[0] - 1 + FrameAmount) % FrameAmount;
                 }
                 if (before != pointsNumbers[0]) {
                     AdjustStopCamera(before);
@@ -175,12 +154,7 @@ namespace EnvironmentMaker {
                     var thisPos = this.transform.position;
                     var pn = pointsNumbers[0];
                     foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                        var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
-                        var basePos = estimates[pn % estimates.Length] + diff + offsets[number, (int)type];
-                        positions[(int)type] = basePos;
-                    }
-                    for (int i = 0; i < positions.Length; i++) {
-                        pointers[i].transform.position = thisPos + positions[i];
+                        pointers[(int)type].transform.position = PartsPosition(type, pn);
                     }
                     UpdateMesh();
                 } else {
@@ -208,7 +182,7 @@ namespace EnvironmentMaker {
                         var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
                         if (beforeTime[i] > timeDiff) {
                             var before = pointsNumbers[i];
-                            pointsNumbers[i] = (pointsNumbers[i] + 1) % walkPoints.Count;
+                            pointsNumbers[i] = (pointsNumbers[i] + 1) % FrameAmount;
                             changed = true;
                         }
                     }
@@ -220,13 +194,7 @@ namespace EnvironmentMaker {
                 var thisPos = this.transform.position;
                 var pn = pointsNumbers[0];
                 foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    //var diff = bodyList[pn][type] - bodyList[pn][JointType.SpineBase];
-                    var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
-                    var basePos = estimates[pn % estimates.Length] + diff + offsets[pn, (int)type] + partsCorrections[pn][type];
-                    positions[(int)type] = basePos;
-                }
-                for (int i = 0; i < positions.Length; i++) {
-                    pointers[i].transform.position = thisPos + positions[i];
+                    pointers[(int)type].transform.position = PartsPosition(type, pn);
                 }
             }
         }
@@ -239,12 +207,11 @@ namespace EnvironmentMaker {
 
             var points = new List<Vector3>();
             var colors = new List<Color>();
-            var time = Time.deltaTime * 1000;
             for (int i = 0; i < kinectNums; i++) {
-                foreach (var v in walkPoints[pointsNumbers[i]][i]) {
+                foreach (var v in polygonData[pointsNumbers[i]].Positions[i]) {
                     points.Add(v);
                 }
-                foreach (var c in walkColors[pointsNumbers[i]][i]) {
+                foreach (var c in polygonData[pointsNumbers[i]].Colors[i]) {
                     colors.Add(c);
                 }
             }
@@ -253,55 +220,18 @@ namespace EnvironmentMaker {
             mesh.SetIndices(Enumerable.Range(0, points.Count).ToArray(), MeshTopology.Points, 0);
         }
 
-        void PointToVoxel(List<Point> basedata, int index) {
-            double maxX = Math.Ceiling(basedata.Max(p => p.GetVector3().x));
-            double minX = Math.Floor(basedata.Min(p => p.GetVector3().x));
-            double maxY = Math.Ceiling(basedata.Max(p => p.GetVector3().y));
-            double minY = Math.Floor(basedata.Min(p => p.GetVector3().y));
-            double maxZ = Math.Ceiling(basedata.Max(p => p.GetVector3().z));
-            double minZ = Math.Floor(basedata.Min(p => p.GetVector3().z));
-            //1 = 1メートル
-            double delta = 0.05;
-            int inverse = (int)(1 / delta);
-            int width = (int)((maxX - minX) * inverse);
-            int height = (int)((maxY - minY) * inverse);
-            int depth = (int)((maxZ - minZ) * inverse);
-            voxels[index] = new Voxel<List<Point>>(width, height, depth, minX, minY, minZ, delta);
-            anothervoxels[index] = new Voxel<List<Point>>(width, height, depth, minX - delta * 0.5, minY - delta * 0.5, minZ - delta * 0.5, delta);
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    for (int k = 0; k < depth; k++) {
-                        voxels[index][i, j, k] = new List<Point>();
-                        anothervoxels[index][i, j, k] = new List<Point>();
-                    }
-                }
-            }
-            foreach (var d in basedata) {
-                var indexVec = voxels[index].GetIndexFromPosition(d.GetVector3());
-                voxels[index][(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
-                var aindex = anothervoxels[index].GetIndexFromPosition(d.GetVector3());
-                anothervoxels[index][(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
-            }
-        }
-
         private void CalcCorrection() {
             for (int i = 0; i < firstBodyParts.GetLength(0); i++) {
                 var positions = new Vector3[pointers.Count];
                 var thisPos = this.transform.position;
                 foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    //var diff = bodyList[pn][type] - bodyList[pn][JointType.SpineBase];
-                    var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
-                    var basePos = estimates[i % estimates.Length] + diff + offsets[i, (int)type] + partsCorrections[i][type];
-                    positions[(int)type] = basePos;
-                }
-                for (int j = 0; j < pointers.Count; j++) {
-                    firstBodyParts[i, j] = thisPos + positions[j];
+                    firstBodyParts[i, (int)type] = PartsPosition(type, i);
                 }
             }
             var reworkIndexes = new List<int>();
-            for (int i = 0; i < offsets.GetLength(0); i++) {
-                for (int j = 0; j < offsets.GetLength(1); j++) {
-                    if (offsets[i,j] != Vector3.zero) {
+            for (int i = 0; i < FrameAmount; i++) {
+                foreach (var vec in polygonData[i].Offsets.Values) {
+                    if (vec != Vector3.zero) {
                         reworkIndexes.Add(i);
                         break;
                     }
@@ -321,8 +251,8 @@ namespace EnvironmentMaker {
             }
             partsNamesLeft[0] = "SpineShoulder";
             partsNamesRight[0] = "SpineShoulder";
-            EitherArmCorrection(reworkIndexes, partsNamesLeft);
-            EitherArmCorrection(reworkIndexes, partsNamesRight);
+            EitherCorrection(reworkIndexes, partsNamesLeft);
+            EitherCorrection(reworkIndexes, partsNamesRight);
         }
 
         private void LegCorrection(List<int> reworkIndexes) {
@@ -335,48 +265,151 @@ namespace EnvironmentMaker {
             }
             partsNamesLeft[0] = "SpineBase";
             partsNamesRight[0] = "SpineBase";
-            EitherLegCorrection(reworkIndexes, partsNamesLeft);
-            EitherLegCorrection(reworkIndexes, partsNamesRight);
+            EitherCorrection(reworkIndexes, partsNamesLeft);
+            EitherCorrection(reworkIndexes, partsNamesRight);
         }
 
-        private void EitherArmCorrection(List<int> reworkIndexes, string[] joints) {
+        private void EitherCorrection(List<int> reworkIndexes, string[] joints) {
             JointType[] partsTypes = joints.Select(p => (JointType)Enum.Parse(typeof(JointType), p)).ToArray();
-            for (int i = 0; i < reworkIndexes.Count - 1; i++) {
-                int firstIndex = reworkIndexes[i];
-                int nextIndex = reworkIndexes[i + 1];
-                for (int j = 0; j < partsTypes.Length - 1; j++) {
-                    JointType firstJoint = partsTypes[j];
-                    JointType nextJoint = partsTypes[j + 1];
-                    //var firstIndexFirstJointVoxel = voxels[firstIndex].GetVoxelFromPosition(firstBodyParts[firstIndex, (int)firstJoint] - this.transform.position);
-                    var firstIndexFirstJointVoxel = voxels[firstIndex].GetIndexFromPosition(firstBodyParts[firstIndex, (int)firstJoint] - this.transform.position);
-                    //if (firstIndexFirstJointVoxel.Count > 0) {
-                    //    for (int k = firstIndex + 1; k < nextIndex; k++) {
+            var allNumbers = Enumerable.Range(0, FrameAmount).ToList();
+            reworkIndexes.ForEach(i => allNumbers.Remove(i));
+            for (int i = 0; i < partsTypes.Length; i++) {
+                bool handMade = false;
+                var histgrams = new List<double[]>();
+                var chistgrams = new List<double[]>();
+                JointType firstJoint = partsTypes[i];
+                var existsIndexes = new List<Vector3>();
+                var existsCIndexes = new List<Vector3>();
+                for (int j = 0; j < reworkIndexes.Count; j++) {
+                    int nextIndex = reworkIndexes[j];
+                    if (polygonData[nextIndex].Offsets[firstJoint] != Vector3.zero) {
+                        handMade = true;
+                        var nextIndexFirstJointIndex = polygonData[nextIndex].Voxel.GetIndexFromPosition(firstBodyParts[nextIndex, (int)firstJoint] - this.transform.position);
+                        var nextIndexFirstJointVoxel = polygonData[nextIndex].Voxel[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
+                        if (nextIndexFirstJointVoxel.Count > 0) {
+                            var histgram = polygonData[nextIndex].Histgram[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
+                            var chistgram = polygonData[nextIndex].ColorHistgram[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
+                            if (histgram != null) {
+                                histgrams.Add(histgram);
+                                existsIndexes.Add(nextIndexFirstJointIndex);
+                            }
+                            if (chistgram != null) {
+                                chistgrams.Add(chistgram);
+                                existsCIndexes.Add(nextIndexFirstJointIndex);
+                            }
+                        }
+                    }
+                }
+                Vector3 histVec = Vector3.zero, histCVec = Vector3.zero;
+                double[] averageHistgram = null, averageCHistgram = null;
+                if (histgrams.Count > 0) {
+                    averageHistgram = new double[histgrams[0].Length];
+                    for (int j = 0; j < averageHistgram.Length; j++) {
+                            averageHistgram[j] = histgrams.Average(h => h[j]);
+                    }
+                }
+                if (chistgrams.Count > 0) {
+                    averageCHistgram = new double[chistgrams[0].Length];
+                    for (int j = 0; j < averageCHistgram.Length; j++) {
+                        averageCHistgram[j] = chistgrams.Average(h => h[j]);
+                    }
+                }
+                var notFoundIndexes = new List<int>();
+                foreach (int j in allNumbers) {
+                    if (averageHistgram != null)
+                        histVec = SearchHistgram(averageHistgram, j, existsIndexes, firstJoint);
+                    if (averageCHistgram != null)
+                        histCVec = SearchHistgram(averageCHistgram, j, existsIndexes, firstJoint);
+                    Vector3 result = Vector3.zero;
+                    if (histVec != Vector3.zero && histCVec != Vector3.zero) {
+                        result = (histVec + histCVec) / 2;
+                    } else if (histCVec != Vector3.zero) {
+                        result = histCVec;
+                    } else if (histVec != Vector3.zero) {
+                        result = histVec;
+                    } else {
+                        notFoundIndexes.Add(j);
+                    }
+                    //if (polygonData[j].PartsCorrestion[firstJoint] != Vector3.zero) {
 
+                    //}
+                    if (result != Vector3.zero)
+                        print($"{j}の{firstJoint}:{result}");
+                    if (polygonData[j].PartsCorrestion[firstJoint] != Vector3.zero) {
+                        float alpha = 0.5f;
+                        polygonData[j].PartsCorrestion[firstJoint] *= alpha;
+                        polygonData[j].PartsCorrestion[firstJoint] += (1 - alpha) * result;
+                    } else {
+                        polygonData[j].PartsCorrestion[firstJoint] = result;
+                    }
+                }
+                if (handMade) {
+                    for (int j = 0; j < notFoundIndexes.Count; j++) {
+                        int start = notFoundIndexes[j] - 1;
+                        int end = notFoundIndexes[j];
+                        if (j < notFoundIndexes.Count - 1) {
+                            int next = notFoundIndexes[j + 1];
+                            while (next - end == 1 && j < notFoundIndexes.Count - 1) {
+                                end = notFoundIndexes[j];
+                                next = notFoundIndexes[j + 1];
+                                j++;
+                            }
+                            if (next - end > 1) {
+                                j--;
+                            }
+                        }
+                        try {
+                            Vector3 startPosition = PartsPosition(firstJoint, start);
+                            Vector3 endPosition = PartsPosition(firstJoint, end + 1);
+                            Vector3 move = (endPosition - startPosition) / (end - start);
+                            for (int k = start + 1; k <= end; k++) {
+                                print($"{k}の{firstJoint}を補間");
+                                polygonData[k].PartsCorrestion[firstJoint] = startPosition + move * (k - start) - PartsPosition(firstJoint, k);
+                            }
+                        } catch (Exception e) {
+                            print(e.Message);
+                        }
+                    }
+                    //for (int j = 0; j < allNumbers.Count; j++) {
+                    //    int index = allNumbers[j];
+                    //    if (index == 0) {
+
+                    //    } else if (index == FrameAmount - 1) {
+                    //        Vector3 first, second, third;
+                    //    } else {
+                    //        Vector3 first = PartsPosition(firstJoint, index - 1),
+                    //            second = PartsPosition(firstJoint, index),
+                    //            third = PartsPosition(firstJoint, index + 1);
+                    //        if ((first - second).magnitude > 2 || (second - third).magnitude > 2) {
+                    //            second = (first + third) / 2;
+                    //            polygonData[index].PartsCorrestion[firstJoint] = second - PartsPosition(firstJoint, index);
+                    //        }
                     //    }
                     //}
                 }
             }
         }
 
-        private void EitherLegCorrection(List<int> reworkIndexes, string[] joints) {
-            JointType[] partsTypes = joints.Select(p => (JointType)Enum.Parse(typeof(JointType), p)).ToArray();
-            for (int i = 0; i < reworkIndexes.Count - 1; i++) {
-                int firstIndex = reworkIndexes[i];
-                int nextIndex = reworkIndexes[i + 1];
-                for (int j = 0; j < partsTypes.Length - 1; j++) {
-                    JointType firstJoint = partsTypes[j];
-                    JointType nextJoint = partsTypes[j + 1];
-                    //Vector3 firstVector = firstBodyParts[firstIndex, (int)nextJoint] - firstBodyParts[firstIndex, (int)firstJoint];
-                    //Vector3 nextVector = firstBodyParts[nextIndex, (int)nextJoint] - firstBodyParts[nextIndex, (int)firstJoint];
-                    //Vector3 moved = nextVector - firstVector;
-                    //int numbers = nextIndex - firstIndex - 1;
-                    //for (int k = firstIndex + 1; k < nextIndex; k++) {
-                    //    var result = (firstVector + moved * (k - firstIndex) / numbers).normalized * firstVector.magnitude;
-                    //    var minus = firstBodyParts[k, (int)nextJoint] - firstBodyParts[k, (int)firstJoint];
-                    //    partsCorrections[k][nextJoint] = result + partsCorrections[k][firstJoint] - minus;
-                    //}
+        private Vector3 PartsPosition(JointType type, int i) {
+            var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
+            var basePos = estimates[i % estimates.Length] + diff + polygonData[i].Offsets[type] + polygonData[i].PartsCorrestion[type];
+            return this.transform.position + basePos;
+        }
+
+        private Vector3 SearchHistgram(double[] averageHistgram, int k, List<Vector3> existsIndexes, JointType firstJoint) {
+            var histgramIndexes = new List<Vector3>();
+            foreach (var e in existsIndexes) {
+                Vector3 histgramIndex = polygonData[k].SearchHistgram(averageHistgram, e);
+                if ((histgramIndex - e).magnitude < 4) {
+                    histgramIndexes.Add(histgramIndex);
                 }
             }
+            if (histgramIndexes.Count > 0) {
+                var histgramIndex = Functions.AverageVector(histgramIndexes);
+                existsIndexes.Add(histgramIndex);
+                Vector3 position = polygonData[k].Voxel.GetPositionFromIndex(histgramIndex);
+                return this.transform.position + position - firstBodyParts[k, (int)firstJoint];
+            } else return Vector3.zero;
         }
 
         void LoadModels(string dir) {
@@ -385,17 +418,12 @@ namespace EnvironmentMaker {
             while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
                 num++;
             }
-            var tmpPoints = new Vector3[num][][];
-            var tmpColors = new Color[num][][];
+            FrameAmount = num;
+            polygonData = new PolygonData[num];
             var points = new Point[num][];
             estimates = new Vector3[num];
-            partsCorrections = new Dictionary<JointType, Vector3>[num];
-            var completeMerge = new Point[num][];
-            voxels = new Voxel<List<Point>>[num];
-            anothervoxels = new Voxel<List<Point>>[num];
             for (int n = 0; n < num; n++) {
                 var pointlist = new List<Point>[kinectNums];
-                var list = new List<Point>();
                 for (int i = 0; i < kinectNums; i++) {
                     var plist = new List<Point>();
                     var fileName = $@"{baseDir}\model_{n}_{i}.ply";
@@ -421,41 +449,27 @@ namespace EnvironmentMaker {
                         }
                     }
                     pointlist[i] = plist;
-                    foreach (var p in plist) {
-                        list.Add(p);
-                    }
                     //yield return n;
                 }
                 //ApplyXZ(pointlist);
-                tmpPoints[n] = pointlist.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
-                tmpColors[n] = pointlist.Select(c => c.Select(p => p.GetColor()).ToArray()).ToArray();
-                completeMerge[n] = ReducePoints(list.ToArray());
-                PointToVoxel(list, n);
-                //yield return n;
-                partsCorrections[n] = new Dictionary<JointType, Vector3>();
-                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    partsCorrections[n][type] = Vector3.zero;
-                }
+                polygonData[n] = new PolygonData(pointlist);
                 //yield return n;
             }
-            walkPoints = tmpPoints.ToList();
-            walkColors = tmpColors.ToList();
-            mergePoints = completeMerge.ToList();// points.ToList();
-            var sborder = BorderPoints(completeMerge[0].ToList());
+            var sborder = BorderPoints(polygonData[0].Complete);
             ////yield return 0;
             var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
             var standard = sborder.Find(s => Math.Abs(s.Average(v => v.Y)) == ymed);
             estimates[0] = Functions.AverageVector(standard.Select(s => s.GetVector3()).ToList());
             ////yield return 0;
             //InitPartsCorrection();
-            for (int i = 1; i < walkColors.Count; i++) {
-                EstimateHip(standard, completeMerge[i].ToList(), i);
+            for (int i = 1; i < FrameAmount; i++) {
+                EstimateHip(standard, polygonData[i].Complete, i);
                 //yield return i;
                 //CalcPartsCorrection(completeMerge[i].ToList(), i);
             }
-            var diff = Functions.AverageVector(completeMerge[0].Select(p => p.GetVector3()).ToList());
+            var diff = Functions.AverageVector(polygonData[0].Complete.Select(p => p.GetVector3()).ToList());
             var bayes = new Bayes();
-            List<Vector2> result = bayes.BayesEstimate(completeMerge[0].Select(p => p.GetVector3()).Select(p => new Vector2(p.x, p.z)).ToList());
+            List<Vector2> result = bayes.BayesEstimate(polygonData[0].Complete.Select(p => p.GetVector3()).Select(p => new Vector2(p.x, p.z)).ToList());
             var firstPoint = result.First();
             var lastPoint = result.Last();
             bodyLine = new TwoDLine((lastPoint.y - firstPoint.y) / (lastPoint.x - firstPoint.x), (firstPoint.y * lastPoint.x - firstPoint.x * lastPoint.y) / (lastPoint.x - firstPoint.x));
@@ -690,20 +704,41 @@ namespace EnvironmentMaker {
 
             if (stopped) {
                 int before = pointsNumbers[0];
-                pointsNumbers[0] = (int)GUI.HorizontalScrollbar(new Rect(0, 580, 800, 20), before, 1, 0, mergePoints.Count);
+                pointsNumbers[0] = (int)GUI.HorizontalScrollbar(new Rect(0, 580, 800, 20), before, 1, 0, FrameAmount);
                 if (before != pointsNumbers[0]) {
                     AdjustStopCamera(before);
                 }
+                GUI.TextArea(new Rect(100, 0, 100, 20), pointsNumbers[0].ToString());
+            }
+
+            if (GUI.Button(new Rect(700, 0, 100, 100), "終わる")) {
+                SaveData();
+                Application.LoadLevel("Second");
+            }
+
+            var beforeDir = tmpDirName;
+            GUI.TextArea(new Rect(100, 40, 100, 20), "モーション名");
+            tmpDirName = GUI.TextArea(new Rect(100, 60, 100, 20), beforeDir);
+            if (beforeDir != tmpDirName && tmpDirName != "" && DirName != tmpDirName && Directory.Exists($@"polygons\{tmpDirName}")) {
+                SaveData();
+                DirName = tmpDirName;
+                LoadModels(DirName);
+                LoadIndexCSV(DirName);
+                LoadBodyDump(DirName);
             }
         }
 
+        private void SaveData() {
+            manager.Data[DirName] = this.polygonData;
+        }
+
         private void AdjustStopCamera(int before) {
-            UpdateMesh();
             for (int i = 1; i < kinectNums; i++) {
                 pointsNumbers[i] = pointsNumbers[0];
             }
-            Vector3 nowCenter = Functions.AverageVector(mergePoints[pointsNumbers[0]].Select(mp => mp.GetVector3()).ToList());
-            Vector3 beforeCenter = Functions.AverageVector(mergePoints[before].Select(mp => mp.GetVector3()).ToList());
+            UpdateMesh();
+            Vector3 nowCenter = Functions.AverageVector(polygonData[pointsNumbers[0]].Merge.Select(mp => mp.GetVector3()).ToList());
+            Vector3 beforeCenter = Functions.AverageVector(polygonData[before].Merge.Select(mp => mp.GetVector3()).ToList());
             Vector3 moved = nowCenter - beforeCenter;
             MainCamera.transform.position += moved;
         }

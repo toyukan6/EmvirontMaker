@@ -24,6 +24,18 @@ namespace EnvironmentMaker {
         public static double GetRandomDouble() => rand.NextDouble();
         public static double GetRandomDouble(double min, double max) => rand.NextDouble() * (max - min) + min;
 
+        public static Vector3 ColorToVector3(Color color) {
+            return new Vector3(color.r, color.g, color.b);
+        }
+
+        public static double GetCos(Vector3 vec1, Vector3 vec2) {
+            double inner = vec1.x * vec2.x + vec1.y * vec2.y + vec1.y * vec2.y;
+            double ret = inner / vec1.magnitude / vec2.magnitude;
+            if (ret > 1) ret = 1;
+            else if (ret < -1) ret = -1;
+            return ret;
+        }
+
         public static List<T3> ZipWith<T1, T2, T3>(List<T1> list1, List<T2> list2, Func<T1, T2, T3> func) {
             var result = new List<T3>();
             int max = Math.Min(list1.Count, list2.Count);

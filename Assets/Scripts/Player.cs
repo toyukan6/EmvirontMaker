@@ -230,7 +230,7 @@ namespace EnvironmentMaker {
 
         private void Awake() {
             Functions.Initialize();
-            firstPersonCamera = this.GetComponent<Camera>();
+            firstPersonCamera = GameObject.Find("Fisheye view camera").GetComponent<Camera>();
             mainCamera = GameObject.Find("Main Camera").GetComponent<Camera>();
             textures = new List<Texture2D>();
             string path = "Textures";
