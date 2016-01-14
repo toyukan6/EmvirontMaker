@@ -230,11 +230,8 @@ namespace EnvironmentMaker {
             }
             var reworkIndexes = new List<int>();
             for (int i = 0; i < FrameAmount; i++) {
-                foreach (var vec in polygonData[i].Offsets.Values) {
-                    if (vec != Vector3.zero) {
-                        reworkIndexes.Add(i);
-                        break;
-                    }
+                if (polygonData[i].Offsets.Values.ToList().Exists(o => o != Vector3.zero)) {
+                    reworkIndexes.Add(i);
                 }
             }
             ArmCorrection(reworkIndexes);
@@ -344,20 +341,24 @@ namespace EnvironmentMaker {
                     }
                 }
                 if (handMade) {
+                    var startAndEnd = new List<Tuple<int, int>>();
+                    int before = -1, start = -1, end = -1;
                     for (int j = 0; j < notFoundIndexes.Count; j++) {
-                        int start = notFoundIndexes[j] - 1;
-                        int end = notFoundIndexes[j];
-                        if (j < notFoundIndexes.Count - 1) {
-                            int next = notFoundIndexes[j + 1];
-                            while (next - end == 1 && j < notFoundIndexes.Count - 1) {
-                                end = notFoundIndexes[j];
-                                next = notFoundIndexes[j + 1];
-                                j++;
-                            }
-                            if (next - end > 1) {
-                                j--;
+                        if (before == -1) {
+                            start = notFoundIndexes[j];
+                        } else {
+                            end = notFoundIndexes[j];
+                            if (end - before > 1) {
+                                startAndEnd.Add(Tuple.Create(start, before));
+                                start = end;
                             }
                         }
+                        before = notFoundIndexes[j];
+                    }
+                    startAndEnd.Add(Tuple.Create(start, end));
+                    for (int j = 0; j < startAndEnd.Count; j++) {
+                        start = startAndEnd[j].First - 1;
+                        end = startAndEnd[j].Second;
                         try {
                             Vector3 startPosition = PartsPosition(firstJoint, start);
                             Vector3 endPosition = PartsPosition(firstJoint, end + 1);
