@@ -29,6 +29,10 @@ namespace EnvironmentMaker {
         /// エディットボタンの大きさと位置
         /// </summary>
         private Rect editRect = new Rect(0, 0, 100, 100);
+        /// <summary>
+        /// セーブファイル名
+        /// </summary>
+        private string saveFileName = "save.dat";
 
         #region エディットモード
         /// <summary>
@@ -254,6 +258,7 @@ namespace EnvironmentMaker {
                         }
                         var tex = new Texture2D(2, 2);
                         tex.LoadImage(bytes.ToArray());
+                        tex.name = Path.GetFileNameWithoutExtension(f);
                         textures.Add(tex);
                     }
                 }
@@ -512,6 +517,7 @@ namespace EnvironmentMaker {
             }
             for (int i = 0; i < result.Length; i++) {
                 result[i].Apply();
+                result[i].name = texture.name;
             }
             int firstLabel = label[texture.height - 1, 0];
             var heights = new List<int>();
@@ -645,6 +651,7 @@ namespace EnvironmentMaker {
             sprender.sprite = sprite;
             sprender.color = spriteColor;
             var obj = Instantiate(SpritePrehab, pos, Quaternion.Euler(90, 0, 0)) as GameObject;
+            obj.name = sprite.name;
             textureObjects.Add(obj);
             var size = sprender.bounds.size;
             var rect = new Rect(pos.x - size.x / 2, pos.z - size.z / 2, size.x, size.z);
@@ -672,6 +679,7 @@ namespace EnvironmentMaker {
                 var newPosition = new Vector3(selectPosition.x, selectedSize.y / 2f, selectPosition.z);
                 ChangeColor(selectedObject, Color.white);
                 var obj = Instantiate(selectedObject, newPosition, Quaternion.identity) as GameObject;
+                obj.name = selectedObject.name;
                 var bill = obj.GetComponent<BillBoard>();
                 bill.SetPlayer(this.gameObject);
                 if (fixing) {
@@ -699,8 +707,11 @@ namespace EnvironmentMaker {
         }
 
         private Sprite Texture2DToSprite(Texture2D texture) {
-            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            sprite.name = texture.name;
+            return sprite;
         }
+
         int beforeWidth = 0;
         int beforeHeight = 0;
         private void WalkModeUpdate() {
@@ -756,6 +767,107 @@ namespace EnvironmentMaker {
                 EditModeGUI();
             } else {
                 WalkModeGUI();
+            }
+
+            bool save = GUI.Button(new Rect(600, 0, 100, 100), "セーブ");
+            if (save) {
+                SaveData();
+            }
+            bool load = GUI.Button(new Rect(700, 0, 100, 100), "ロード");
+            if (load) {
+                LoadData();
+            }
+        }
+
+        private void SaveData() {
+            var objects = GameObject.FindGameObjectsWithTag("Objects");
+            var pcs = GameObject.FindGameObjectsWithTag("PointCloud");
+            using (var writer = new FileStream(saveFileName, FileMode.OpenOrCreate)) {
+                using (var bwriter = new BinaryWriter(writer)) {
+                    bwriter.Write(objects.Length - 1);
+                    foreach (var o in objects) {
+                        if (o != Cursor) {
+                            bwriter.Write(o.name);
+                            bwriter.Write(o.transform.position.x);
+                            bwriter.Write(o.transform.position.y);
+                            bwriter.Write(o.transform.position.z);
+                            bwriter.Write(o.transform.localEulerAngles.x);
+                            bwriter.Write(o.transform.localEulerAngles.y);
+                            bwriter.Write(o.transform.localEulerAngles.z);
+                            bwriter.Write(o.transform.localScale.x);
+                            bwriter.Write(o.transform.localScale.y);
+                            bwriter.Write(o.transform.localScale.z);
+                            var bill = o.GetComponent<BillBoard>();
+                            bwriter.Write(bill.enabled);
+                            var osprite = o.GetComponent<SpriteRenderer>();
+                            bwriter.Write(osprite.sortingLayerID);
+                            var collider = o.GetComponent<BoxCollider>();
+                            bool isNull = false;
+                            try {
+                                var test = collider.enabled;
+                            } catch (MissingComponentException e) {
+                                isNull = true;
+                            }
+                            bwriter.Write(isNull);
+                            if (!isNull) {
+                                bwriter.Write(collider.size.x);
+                                bwriter.Write(collider.size.y);
+                                bwriter.Write(collider.size.z);
+                            }
+                        }
+                    }
+                    bwriter.Write(pcs.Length);
+                    foreach (var p in pcs) {
+                        p.GetComponent<PointCloud>().Save(bwriter);
+                    }
+                }
+            }
+        }
+
+        private void LoadData() {
+            if (File.Exists(saveFileName)) {
+                bool beforeFailure = failure;
+                failure = false;
+                using (var reader = new FileStream(saveFileName, FileMode.Open)) {
+                    using (var breader = new BinaryReader(reader)) {
+                        int objectNumber = breader.ReadInt32();
+                        for (int i = 0; i < objectNumber; i++) {
+                            string name = breader.ReadString();
+                            Texture2D targetTexture = textures.Find(t => t.name == name);
+                            float x = breader.ReadSingle();
+                            float y = breader.ReadSingle();
+                            float z = breader.ReadSingle();
+                            float angleX = breader.ReadSingle();
+                            float angleY = breader.ReadSingle();
+                            float angleZ = breader.ReadSingle();
+                            float scaleX = breader.ReadSingle();
+                            float scaleY = breader.ReadSingle();
+                            float scaleZ = breader.ReadSingle();
+                            var obj = CreateSpriteObject(new Vector3(x, y, z), Texture2DToSprite(targetTexture));
+                            obj.transform.localEulerAngles = new Vector3(angleX, angleY, angleZ);
+                            obj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+                            if (angleX != 90) {
+                                obj = CreateBillBoard(obj);
+                            }
+                            obj.GetComponent<BillBoard>().enabled = breader.ReadBoolean();
+                            int layerID = breader.ReadInt32();
+                            obj.GetComponent<SpriteRenderer>().sortingLayerID = layerID;
+                            var isNull = breader.ReadBoolean();
+                            if (!isNull) {
+                                var box = obj.AddComponent<BoxCollider>();
+                                float sizeX = breader.ReadSingle();
+                                float sizeY = breader.ReadSingle();
+                                float sizeZ = breader.ReadSingle();
+                                box.size = new Vector3(sizeX, sizeY, sizeZ);
+                            }
+                        }
+                        int pcsNumber = breader.ReadInt32();
+                        for (int i = 0; i < pcsNumber; i++) {
+                            PointCloud.Load(breader);
+                        }
+                    }
+                }
+                failure = beforeFailure;
             }
         }
 
@@ -1001,6 +1113,7 @@ namespace EnvironmentMaker {
                     Vector3 offset = position - firstPosition;
                     foreach (var r in results) {
                         var clone = Instantiate(r, r.transform.position + offset, Quaternion.identity) as GameObject;
+                        clone.name = r.name;
                         clone.transform.localEulerAngles = r.transform.localEulerAngles;
                         objects.Add(clone);
                     }
