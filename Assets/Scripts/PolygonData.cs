@@ -21,7 +21,7 @@ namespace EnvironmentMaker {
         public Dictionary<JointType, Vector3> Offsets { get; private set; }
         public Dictionary<JointType, Vector3> PartsCorrestion { get; private set; }
 
-        public PolygonData(List<Point>[] points) {
+        public PolygonData(List<Point>[] points, bool simple = false) {
             Positions = points.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
             Colors = points.Select(v => v.Select(p => p.GetColor()).ToArray()).ToArray();
             Complete = new List<Point>();
@@ -30,12 +30,14 @@ namespace EnvironmentMaker {
                 Complete = Complete.Concat(points[i]).ToList();
                 Merge = Merge.Concat(ReducePoints(points[i])).ToList();
             }
-            PointToVoxel(Complete);
-            Offsets = new Dictionary<JointType, Vector3>();
-            PartsCorrestion = new Dictionary<JointType, Vector3>();
-            foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                Offsets[type] = Vector3.zero;
-                PartsCorrestion[type] = Vector3.zero;
+            if (!simple) {
+                PointToVoxel(Complete);
+                Offsets = new Dictionary<JointType, Vector3>();
+                PartsCorrestion = new Dictionary<JointType, Vector3>();
+                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                    Offsets[type] = Vector3.zero;
+                    PartsCorrestion[type] = Vector3.zero;
+                }
             }
         }
 

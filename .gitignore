@@ -19,5 +19,6 @@ ExportedObj
 ehthumbs.db
 Thumbs.db
 *.dat
+compilation log.txt
 Test.unity
 Textures/*
