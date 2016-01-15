@@ -327,9 +327,6 @@ namespace EnvironmentMaker {
                     } else {
                         notFoundIndexes.Add(j);
                     }
-                    //if (polygonData[j].PartsCorrestion[firstJoint] != Vector3.zero) {
-
-                    //}
                     if (result != Vector3.zero)
                         print($"{j}の{firstJoint}:{result}");
                     if (polygonData[j].PartsCorrestion[firstJoint] != Vector3.zero) {
@@ -371,22 +368,6 @@ namespace EnvironmentMaker {
                             print(e.Message);
                         }
                     }
-                    //for (int j = 0; j < allNumbers.Count; j++) {
-                    //    int index = allNumbers[j];
-                    //    if (index == 0) {
-
-                    //    } else if (index == FrameAmount - 1) {
-                    //        Vector3 first, second, third;
-                    //    } else {
-                    //        Vector3 first = PartsPosition(firstJoint, index - 1),
-                    //            second = PartsPosition(firstJoint, index),
-                    //            third = PartsPosition(firstJoint, index + 1);
-                    //        if ((first - second).magnitude > 2 || (second - third).magnitude > 2) {
-                    //            second = (first + third) / 2;
-                    //            polygonData[index].PartsCorrestion[firstJoint] = second - PartsPosition(firstJoint, index);
-                    //        }
-                    //    }
-                    //}
                 }
             }
         }

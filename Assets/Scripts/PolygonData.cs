@@ -196,11 +196,7 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-            if ((result - anotherResult).magnitude > 4) {
-                return ((index - result).magnitude < (index - anotherResult).magnitude ? result : anotherResult);
-            }
-            Vector3 ret = (result + anotherResult) * 0.5f;
-            return new Vector3((int)ret.x, (int)ret.y, (int)ret.z);
+            return ((index - result).magnitude < (index - anotherResult).magnitude ? result : anotherResult);
         }
     }
 }
