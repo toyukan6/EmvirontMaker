@@ -12,7 +12,7 @@ namespace EnvironmentMaker {
     class AdjustBody : MonoBehaviour {
         PlyReader reader;
         List<Vector3> bodyposes;
-        int kinectNums = 4;
+        int kinectNums = 3;
         public GameObject Pointer;
         List<GameObject> pointers = new List<GameObject>();
         Vector3[] estimates;
@@ -61,6 +61,7 @@ namespace EnvironmentMaker {
                 pointsNumbers[i] = 0;
             }
             GetComponent<MeshFilter>().mesh = mesh;
+            manager = GameObject.FindObjectOfType<PolygonManager>();
             LoadModels(DirName);
             LoadIndexCSV(DirName);
             LoadBodyDump(DirName);
@@ -83,8 +84,8 @@ namespace EnvironmentMaker {
             stopEularAngle = this.transform.localEulerAngles;
             movePosition = new Vector3(1.1f, 1.4f, -1);
             moveEularAngle = new Vector3(0, 0, 0);
-            manager = GameObject.FindObjectOfType<PolygonManager>();
             tmpDirName = DirName;
+            PolygonManager.Load(DirName);
             UpdateMesh();
         }
 
@@ -275,8 +276,8 @@ namespace EnvironmentMaker {
                 var histgrams = new List<double[]>();
                 var chistgrams = new List<double[]>();
                 JointType firstJoint = partsTypes[i];
-                var existsIndexes = new List<Vector3>();
-                var existsCIndexes = new List<Vector3>();
+                var existsIndexes = new Dictionary<int, Vector3>();
+                var existsCIndexes = new Dictionary<int, Vector3>();
                 for (int j = 0; j < reworkIndexes.Count; j++) {
                     int nextIndex = reworkIndexes[j];
                     if (polygonData[nextIndex].Offsets[firstJoint] != Vector3.zero) {
@@ -288,11 +289,11 @@ namespace EnvironmentMaker {
                             var chistgram = polygonData[nextIndex].ColorHistgram[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
                             if (histgram != null) {
                                 histgrams.Add(histgram);
-                                existsIndexes.Add(nextIndexFirstJointIndex);
+                                existsIndexes.Add(j, nextIndexFirstJointIndex);
                             }
                             if (chistgram != null) {
                                 chistgrams.Add(chistgram);
-                                existsCIndexes.Add(nextIndexFirstJointIndex);
+                                existsCIndexes.Add(j, nextIndexFirstJointIndex);
                             }
                         }
                     }
@@ -397,20 +398,14 @@ namespace EnvironmentMaker {
             return this.transform.position + basePos;
         }
 
-        private Vector3 SearchHistgram(double[] averageHistgram, int k, List<Vector3> existsIndexes, JointType firstJoint) {
+        private Vector3 SearchHistgram(double[] averageHistgram, int k, Dictionary<int, Vector3> existsIndexes, JointType firstJoint) {
             var histgramIndexes = new List<Vector3>();
-            foreach (var e in existsIndexes) {
-                Vector3 histgramIndex = polygonData[k].SearchHistgram(averageHistgram, e);
-                if ((histgramIndex - e).magnitude < 4) {
-                    histgramIndexes.Add(histgramIndex);
-                }
-            }
-            if (histgramIndexes.Count > 0) {
-                var histgramIndex = Functions.AverageVector(histgramIndexes);
-                existsIndexes.Add(histgramIndex);
-                Vector3 position = polygonData[k].Voxel.GetPositionFromIndex(histgramIndex);
-                return this.transform.position + position - firstBodyParts[k, (int)firstJoint];
-            } else return Vector3.zero;
+            int index = existsIndexes.Keys.ToList().IndexOfMin(i => Math.Abs(k - i));
+            int key = existsIndexes.Keys.ToList()[index];
+            Vector3 histgramIndex = polygonData[k].SearchHistgram(averageHistgram, existsIndexes[key]);
+            existsIndexes.Add(k, histgramIndex);
+            Vector3 position = polygonData[k].Voxel.GetPositionFromIndex(histgramIndex);
+            return this.transform.position + position - firstBodyParts[k, (int)firstJoint];
         }
 
         void LoadModels(string dir) {
@@ -469,13 +464,11 @@ namespace EnvironmentMaker {
                 //CalcPartsCorrection(completeMerge[i].ToList(), i);
             }
             var diff = Functions.AverageVector(polygonData[0].Complete.Select(p => p.GetVector3()).ToList());
-            var bayes = new Bayes();
-            List<Vector2> result = bayes.BayesEstimate(polygonData[0].Complete.Select(p => p.GetVector3()).Select(p => new Vector2(p.x, p.z)).ToList());
-            var firstPoint = result.First();
-            var lastPoint = result.Last();
-            bodyLine = new TwoDLine((lastPoint.y - firstPoint.y) / (lastPoint.x - firstPoint.x), (firstPoint.y * lastPoint.x - firstPoint.x * lastPoint.y) / (lastPoint.x - firstPoint.x));
             this.transform.position -= diff;
             firstPosition = this.transform.position;
+            if (!manager.Data.ContainsKey(dir)) {
+                manager.Data[dir] = this.polygonData;
+            }
             loadEnd = true;
         }
 
@@ -731,6 +724,7 @@ namespace EnvironmentMaker {
 
         private void SaveData() {
             manager.Data[DirName] = this.polygonData;
+            PolygonManager.Save();
         }
 
         private void AdjustStopCamera(int before) {

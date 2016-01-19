@@ -136,10 +136,6 @@ namespace EnvironmentMaker {
         /// </summary>
         private Texture2D groundTexture;
         /// <summary>
-        /// 切断したあとの地面たち
-        /// </summary>
-        private List<GameObject> cutGrounds = new List<GameObject>();
-        /// <summary>
         /// スプライトの色
         /// </summary>
         private Color spriteColor = Color.white;
@@ -223,6 +219,14 @@ namespace EnvironmentMaker {
         /// 川生成モード
         /// </summary>
         private bool createRiver = false;
+        /// <summary>
+        /// 領域拡張した結果
+        /// </summary>
+        private Dictionary<string, Tuple<Texture2D[], int[,]>> areaExpansions = new Dictionary<string, Tuple<Texture2D[], int[,]>>();
+        /// <summary>
+        /// 上下に動かした物体組
+        /// </summary>
+        private List<List<GameObject>> updowns = new List<List<GameObject>>();
         #endregion
 
         #region 歩行モード
@@ -230,6 +234,15 @@ namespace EnvironmentMaker {
         /// 歩行制御
         /// </summary>
         private FirstPersonController controller;
+        /// <summary>
+        /// 歩きモーション開始地点
+        /// </summary>
+        private Vector2 walkStart;
+        /// <summary>
+        /// 歩きモーション終了地点
+        /// </summary>
+        private Vector2 walkEnd;
+        private bool recordMode = false;
         #endregion
 
         private void Awake() {
@@ -263,6 +276,8 @@ namespace EnvironmentMaker {
                     }
                 }
             }
+            int.TryParse(extensionStartStr, out extensionStart);
+            int.TryParse(extensionThresholdStr, out extensionThreshold);
             var material = baseGround.GetComponent<MeshRenderer>().sharedMaterial;
             material.mainTexture = null;
             controller = this.GetComponentInParent<FirstPersonController>();
@@ -416,6 +431,68 @@ namespace EnvironmentMaker {
                     label[i, j] = 0;
                 }
             }
+            Texture2D[] result;
+            if (areaExpansions.ContainsKey(texture.name)) {
+                result = areaExpansions[texture.name].First;
+                label = areaExpansions[texture.name].Second;
+            } else {
+                result = AreaExpansion(texture, label);
+            }
+            var others = new List<int>();
+            int firstLabel = label[texture.height - 1, 0];
+            var heights = new List<int>();
+            for (int j = 0; j < texture.width; j++) {
+                for (int i = texture.height - 1; i >= 0; i--) {
+                    if (label[i, j] != firstLabel) {
+                        heights.Add(texture.height - 1 - i);
+                        break;
+                    }
+                }
+            }
+            int minHeight = heights.Min();
+            int maxHeight = heights.Max();
+            Vector3 position = selectedObject.transform.position;
+            Vector3 firstPosition = position;
+            Vector3 firstAngle = selectedObject.transform.localEulerAngles;
+            Sprite firstSprite = selectedObject.GetComponent<SpriteRenderer>().sprite;
+            Destroy(selectedObject.gameObject);
+            ChangeSelectedObject(null);
+            //CreateSpriteObject(position, Texture2DToSprite(result[0]));
+            GameObject obj0 = CreateSpriteObject(position, Texture2DToSprite(result[0]));
+            bool beforeFix = fixing;
+            fixing = true;
+            GameObject bill = CreateBillBoard(obj0);
+            fixing = beforeFix;
+            float theta = bill.transform.localEulerAngles.y + 90;
+            theta = (float)(theta * Math.PI / 180);
+            var diff = new Vector2((texture.height / 2 - maxHeight) / 100f, 0).Rotate(-theta);
+            bill.transform.position -= new Vector3(diff.x, bill.transform.position.y * 2, diff.y);
+            bill.transform.localEulerAngles = new Vector3(0, firstAngle.y, 0);
+            if (direction == Direction.Up) {
+                position += new Vector3(0, minHeight / 100f, 0);
+            } else if (direction == Direction.Down) {
+                position -= new Vector3(0, minHeight / 100f, 0);
+            }
+            var obj1 = CreateSpriteObject(position, Texture2DToSprite(result[1]));
+            obj1.GetComponent<SpriteRenderer>().sortingLayerID = Functions.SortingLayerUniqueIDs[1];
+            obj1.transform.localEulerAngles = firstAngle;
+            results.Add(bill);
+            results.Add(obj1);
+            undoAct = () => {
+                Destroy(bill.gameObject);
+                DeleteTexture(obj1.gameObject);
+                CreateSpriteObject(firstPosition, firstSprite);
+            };
+            foreach (var r in results) {
+                r.tag = "UpDown";
+            }
+            updowns.Add(results);
+            return results;
+        }
+
+        Texture2D[] AreaExpansion(Texture2D texture, int[,] label) {
+            var results = new List<GameObject>();
+            var queue = new Queue<Vector2>();
             for (int j = 0; j < texture.width; j++) {
                 for (int i = texture.height - 1; i >= 0; i--) {
                     Color d = texture.GetPixel(j, i);
@@ -517,53 +594,10 @@ namespace EnvironmentMaker {
             }
             for (int i = 0; i < result.Length; i++) {
                 result[i].Apply();
-                result[i].name = texture.name;
+                result[i].name = $"{texture.name}{i}";
             }
-            int firstLabel = label[texture.height - 1, 0];
-            var heights = new List<int>();
-            for (int j = 0; j < texture.width; j++) {
-                for (int i = texture.height - 1; i >= 0; i--) {
-                    if (label[i, j] != firstLabel) {
-                        heights.Add(texture.height - 1 - i);
-                        break;
-                    }
-                }
-            }
-            int minHeight = heights.Min();
-            int maxHeight = heights.Max();
-            Vector3 position = selectedObject.transform.position;
-            Vector3 firstPosition = position;
-            Vector3 firstAngle = selectedObject.transform.localEulerAngles;
-            Sprite firstSprite = selectedObject.GetComponent<SpriteRenderer>().sprite;
-            Destroy(selectedObject.gameObject);
-            ChangeSelectedObject(null);
-            //CreateSpriteObject(position, Texture2DToSprite(result[0]));
-            GameObject obj0 = CreateSpriteObject(position, Texture2DToSprite(result[0]));
-            bool beforeFix = fixing;
-            fixing = true;
-            GameObject bill = CreateBillBoard(obj0);
-            fixing = beforeFix;
-            float theta = bill.transform.localEulerAngles.y + 90;
-            theta = (float)(theta * Math.PI / 180);
-            var diff = new Vector2((texture.height / 2 - maxHeight) / 100f, 0).Rotate(-theta);
-            bill.transform.position -= new Vector3(diff.x, bill.transform.position.y * 2, diff.y);
-            bill.transform.localEulerAngles = new Vector3(0, firstAngle.y, 0);
-            if (direction == Direction.Up) {
-                position += new Vector3(0, minHeight / 100f, 0);
-            } else if (direction == Direction.Down) {
-                position -= new Vector3(0, minHeight / 100f, 0);
-            }
-            var obj1 = CreateSpriteObject(position, Texture2DToSprite(result[1]));
-            obj1.GetComponent<SpriteRenderer>().sortingLayerID = Functions.SortingLayerUniqueIDs[1];
-            obj1.transform.localEulerAngles = firstAngle;
-            results.Add(bill);
-            results.Add(obj1);
-            undoAct = () => {
-                Destroy(bill.gameObject);
-                DeleteTexture(obj1.gameObject);
-                CreateSpriteObject(firstPosition, firstSprite);
-            };
-            return results;
+            areaExpansions[texture.name] = Tuple.Create(result, label);
+            return result;
         }
 
         //private void DownGround() {
@@ -712,45 +746,33 @@ namespace EnvironmentMaker {
             return sprite;
         }
 
-        int beforeWidth = 0;
-        int beforeHeight = 0;
         private void WalkModeUpdate() {
             var pos = this.transform.position;
             Back.transform.position = pos;
-            //if (groundTexture != null) {
-            //    var tmp = baseGround.transform.localScale;
-            //    var scale = new Vector2(tmp.x, tmp.z);
-            //    var groundWidth = scale.x * 10;
-            //    var groundHeight = scale.y * 10;
-            //    var dotW = groundWidth / groundTexture.width;
-            //    var dotH = groundHeight / groundTexture.height;
-            //    var start = baseGround.transform.position + new Vector3(-groundWidth / 2, 0, -groundHeight / 2);
-            //    var playerPos = this.transform.position;
-            //    var diff = start - playerPos;
-            //    int width = (int)(Math.Abs(diff.x) / dotW);
-            //    int height = (int)(Math.Abs(diff.z) / dotH);
-            //    print($"ground:{groundTexture.width} width:{width} height:{height} color:{groundTexture.GetPixel(width, height).ToString()}");
-            //    if (groundTexture.GetPixel(width, height) == new Color(1, 1, 1, 0)) {
-            //        //var x = width;
-            //        //do {
-            //        //    x++;
-            //        //} while (x < groundTexture.width && groundTexture.GetPixel(x, height) != new Color(1, 1, 1, 0));
-            //        //if (x >= groundTexture.width) {
-            //        //    x = width;
-            //        //    do {
-            //        //        x--;
-            //        //    } while (x >= 0 && groundTexture.GetPixel(x, height) != new Color(1, 1, 1, 0));
-            //        //    if (x < 0) {
-            //        //        x = width;
-            //        //    }
-            //        //}
-            //        //var newPos = start + new Vector3(x * dotW, 0, height * dotH);
-            //        //print(newPos);
-            //        //controller.transform.position = newPos;
-            //        print("IsOut");
-            //    }
-            //}
-            //Ground.transform.position = new Vector3(pos.x, 0, pos.z);
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                WalkRecord();
+            } 
+            if (Input.GetKeyDown(KeyCode.Alpha1)) {
+                CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(textures[0])));
+            }
+        }
+
+        private Vector3 GetLookAtPosition() {
+            Vector3 basePos = this.transform.position;
+            Vector3 thisAngle = this.transform.eulerAngles;
+            float length = 5;
+            Vector3 diff = new Vector3(length, 0, 0).RotateXZ(Math.PI / 2 - thisAngle.y * Math.PI / 180);
+            return basePos + diff;
+        }
+
+        private void WalkRecord() {
+            recordMode = !recordMode;
+            if (recordMode) {
+                walkStart = new Vector2(this.transform.position.x, this.transform.position.z);
+            } else {
+                walkEnd = new Vector2(this.transform.position.x, this.transform.position.z);
+                SetPointCloud("result", walkStart, walkEnd);
+            }
         }
 
         private void OnGUI() {
@@ -769,14 +791,21 @@ namespace EnvironmentMaker {
                 WalkModeGUI();
             }
 
-            bool save = GUI.Button(new Rect(600, 0, 100, 100), "セーブ");
+            bool save = GUI.Button(new Rect(600, 0, 100, 50), "セーブ");
             if (save) {
                 SaveData();
             }
-            bool load = GUI.Button(new Rect(700, 0, 100, 100), "ロード");
+            bool load = GUI.Button(new Rect(600, 50, 100, 50), "ロード");
             if (load) {
                 LoadData();
             }
+            if (GUI.Button(new Rect(700, 0, 100, 100), "モーション\n編集")) {
+                OfflineScene();
+            }
+        }
+
+        private void OfflineScene() {
+            Application.LoadLevel("Offline");
         }
 
         private void SaveData() {
@@ -784,6 +813,17 @@ namespace EnvironmentMaker {
             var pcs = GameObject.FindGameObjectsWithTag("PointCloud");
             using (var writer = new FileStream(saveFileName, FileMode.OpenOrCreate)) {
                 using (var bwriter = new BinaryWriter(writer)) {
+                    var brenderer = Back.GetComponent<MeshRenderer>();
+                    bool backGroundTextureIsNull = brenderer.sharedMaterial.mainTexture == null;
+                    bwriter.Write(backGroundTextureIsNull);
+                    if (!backGroundTextureIsNull) {
+                        bwriter.Write(brenderer.sharedMaterial.mainTexture.name);
+                    }
+                    bool groundTextureIsNull = groundTexture == null;
+                    bwriter.Write(groundTextureIsNull);
+                    if (!groundTextureIsNull) {
+                        bwriter.Write(groundTexture.name);
+                    }
                     bwriter.Write(objects.Length - 1);
                     foreach (var o in objects) {
                         if (o != Cursor) {
@@ -797,11 +837,52 @@ namespace EnvironmentMaker {
                             bwriter.Write(o.transform.localScale.x);
                             bwriter.Write(o.transform.localScale.y);
                             bwriter.Write(o.transform.localScale.z);
+                            bwriter.Write(o.layer);
                             var bill = o.GetComponent<BillBoard>();
                             bwriter.Write(bill.enabled);
                             var osprite = o.GetComponent<SpriteRenderer>();
                             bwriter.Write(osprite.sortingLayerID);
                             var collider = o.GetComponent<BoxCollider>();
+                            bool isNull = false;
+                            try {
+                                var test = collider.enabled;
+                            } catch (MissingComponentException e) {
+                                isNull = true;
+                            }
+                            bwriter.Write(isNull);
+                            if (!isNull) {
+                                bwriter.Write(collider.size.x);
+                                bwriter.Write(collider.size.y);
+                                bwriter.Write(collider.size.z);
+                            }
+                        }
+                    }
+                    bwriter.Write(updowns.Count);
+                    foreach (var ud in updowns) {
+                        bwriter.Write(ud.Count);
+                        if (ud.Count > 0) {
+                            string tname = ud[0].name.Substring(0, ud[0].name.Length - 1);
+                            bwriter.Write(tname);
+                            GameObject udTexture = ud.Find(go => go.transform.localEulerAngles.x == 90);
+                            Vector3 position = udTexture.transform.position;
+                            if (position.y < 0) {
+                                bwriter.Write((int)Direction.Down);
+                            } else {
+                                bwriter.Write((int)Direction.Up);
+                            }
+                            bwriter.Write(position.x);
+                            bwriter.Write(position.z);
+                            bwriter.Write(udTexture.transform.localEulerAngles.x);
+                            bwriter.Write(udTexture.transform.localEulerAngles.y);
+                            bwriter.Write(udTexture.transform.localEulerAngles.z);
+                            bwriter.Write(udTexture.transform.localScale.x);
+                            bwriter.Write(udTexture.transform.localScale.y);
+                            bwriter.Write(udTexture.transform.localScale.z);
+                            var bill = udTexture.GetComponent<BillBoard>();
+                            bwriter.Write(bill.enabled);
+                            var osprite = udTexture.GetComponent<SpriteRenderer>();
+                            bwriter.Write(osprite.sortingLayerID);
+                            var collider = udTexture.GetComponent<BoxCollider>();
                             bool isNull = false;
                             try {
                                 var test = collider.enabled;
@@ -828,12 +909,25 @@ namespace EnvironmentMaker {
             if (File.Exists(saveFileName)) {
                 bool beforeFailure = failure;
                 failure = false;
+                var dictionary = new Dictionary<string, Texture2D[]>();
                 using (var reader = new FileStream(saveFileName, FileMode.Open)) {
                     using (var breader = new BinaryReader(reader)) {
+                        bool backGroundTextureIsNull = breader.ReadBoolean();
+                        if (!backGroundTextureIsNull) {
+                            string tname = breader.ReadString();
+                            Texture2D targetexture = textures.Find(t => t.name == tname);
+                            SetBackGround(targetexture);
+                        }
+                        bool groundTextureIsNull = breader.ReadBoolean();
+                        if (!groundTextureIsNull) {
+                            string tname = breader.ReadString();
+                            Texture2D targetexture = textures.Find(t => t.name == tname);
+                            SetGround(Texture2DToSprite(targetexture));
+                        }
                         int objectNumber = breader.ReadInt32();
                         for (int i = 0; i < objectNumber; i++) {
-                            string name = breader.ReadString();
-                            Texture2D targetTexture = textures.Find(t => t.name == name);
+                            string tname = breader.ReadString();
+                            Texture2D targetTexture = textures.Find(t => t.name == tname);
                             float x = breader.ReadSingle();
                             float y = breader.ReadSingle();
                             float z = breader.ReadSingle();
@@ -861,9 +955,43 @@ namespace EnvironmentMaker {
                                 box.size = new Vector3(sizeX, sizeY, sizeZ);
                             }
                         }
+                        int udNumber = breader.ReadInt32();
+                        for (int i = 0; i < udNumber; i++) {
+                            int ud = breader.ReadInt32();
+                            if (ud > 0) {
+                                string name = breader.ReadString();
+                                Texture2D targetTexture = textures.Find(t => t.name == name);
+                                Direction d = (Direction)breader.ReadInt32();
+                                float x = breader.ReadSingle();
+                                float z = breader.ReadSingle();
+                                var obj = CreateSpriteObject(new Vector3(x, 0, z), Texture2DToSprite(targetTexture));
+                                float angleX = breader.ReadSingle();
+                                float angleY = breader.ReadSingle();
+                                float angleZ = breader.ReadSingle();
+                                float scaleX = breader.ReadSingle();
+                                float scaleY = breader.ReadSingle();
+                                float scaleZ = breader.ReadSingle();
+                                obj.transform.localEulerAngles = new Vector3(angleX, angleY, angleZ);
+                                obj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+                                obj.GetComponent<BillBoard>().enabled = breader.ReadBoolean();
+                                int layerID = breader.ReadInt32();
+                                obj.GetComponent<SpriteRenderer>().sortingLayerID = layerID;
+                                var isNull = breader.ReadBoolean();
+                                if (!isNull) {
+                                    var box = obj.AddComponent<BoxCollider>();
+                                    float sizeX = breader.ReadSingle();
+                                    float sizeY = breader.ReadSingle();
+                                    float sizeZ = breader.ReadSingle();
+                                    box.size = new Vector3(sizeX, sizeY, sizeZ);
+                                }
+                                List<GameObject> result = UpDownTexture(obj, d);
+                                updowns.Add(result);
+                            }
+                        }
                         int pcsNumber = breader.ReadInt32();
                         for (int i = 0; i < pcsNumber; i++) {
-                            PointCloud.Load(breader);
+                            Tuple<string, Vector2?, Vector2?> tuple = PointCloud.Load(breader);
+                            SetPointCloud(tuple.First, tuple.Second, tuple.Third);
                         }
                     }
                 }
@@ -899,6 +1027,7 @@ namespace EnvironmentMaker {
         }
 
         private void EditModeGUI() {
+            var srender = Cursor.GetComponent<SpriteRenderer>();
             showButton = GUI.Button(showRect, (showTextures ? "隠す" : "表示する"));
             if (showButton) {
                 showTextures = !showTextures;
@@ -931,49 +1060,12 @@ namespace EnvironmentMaker {
                 textureArea = new Rect();
             }
             var back = GUI.Button(new Rect(0, 500, 50, 50), "背景");
-            if (back) {
-                var material = Back.GetComponent<MeshRenderer>().sharedMaterial;
-                var srender = Cursor.GetComponent<SpriteRenderer>();
-                if (srender.sprite != null) {
-                    material.mainTexture = srender.sprite.texture;
-                    Back.gameObject.SetActive(true);
-                }
+            if (back && srender.sprite != null) {
+                SetBackGround(srender.sprite.texture);
             }
             var ground = GUI.Button(new Rect(50, 500, 50, 50), "地面");
-            if (ground) {
-                if (cutGrounds.Count > 0) {
-                    cutGrounds.ForEach(c => Destroy(c.gameObject));
-                    cutGrounds.Clear();
-                    baseGround.SetActive(true);
-                }
-                var meshRenderer = baseGround.GetComponent<MeshRenderer>();
-                meshRenderer.enabled = false;
-                Material material = meshRenderer.sharedMaterial;
-                var srender = Cursor.GetComponent<SpriteRenderer>();
-                if (srender.sprite != null) {
-                    material.color = spriteColor;
-                    var texture = srender.sprite.texture;
-                    var list = new List<Vector2>();
-                    var scale = baseGround.transform.localScale;
-                    if (groundTexture == null) {
-                        if (texture.height > texture.width) {
-                            var ratio = (float)texture.height / texture.width;
-                            baseGround.transform.localScale = new Vector3(scale.x, scale.y, scale.z * ratio);
-                        } else {
-                            var ratio = (float)texture.width / texture.height;
-                            baseGround.transform.localScale = new Vector3(scale.x * ratio, scale.y, scale.z);
-                        }
-                        material.mainTexture = texture;
-                    }
-                    groundTexture = texture;
-                    var obj = CreateSpriteObject(Vector3.zero, Texture2DToSprite(texture));
-                    textureRects[textureRects.Count - 1] = new Rect(0, 0, 1, 1);
-                    obj.transform.localEulerAngles = new Vector3(90, 0, 0);
-                    float x = 3.65f * Math.Max(2750f / texture.width, 11470f / texture.height);
-                    //print(ratio2);
-                    obj.transform.localScale = new Vector3(x, x, 1);
-                    obj.GetComponent<SpriteRenderer>().sortingLayerID = Functions.SortingLayerUniqueIDs[layer];
-                }
+            if (ground && srender.sprite != null) {
+                SetGround(srender.sprite);
             }
             string riverText = "川を作る";
             if (createRiver) {
@@ -1000,13 +1092,6 @@ namespace EnvironmentMaker {
             motionName = GUI.TextField(new Rect(300, 520, 100, 80), motionName);
             if (motion) {
                 if (Directory.Exists($"polygons/{motionName}")) {
-                    var pos = GetScreenPos(mainCamera.transform.position);
-                    pos.y = 1.357328f;
-                    var pcObj = Instantiate(PointCloudPrehab, pos, Quaternion.identity) as GameObject;
-                    var pc = pcObj.GetComponent<PointCloud>();
-                    if (pc != null) {
-                        pc.DirName = motionName;
-                    }
                     List<Vector2> positions = range.Select(r => r.position).ToList();
                     Vector2? start = null, end = null;
                     if (positions.Count > 0) {
@@ -1015,7 +1100,7 @@ namespace EnvironmentMaker {
                             end = positions[1];
                         }
                     }
-                    pc.Initialize(start, end);
+                    SetPointCloud(motionName, start, end);
                 } else {
                     errMessage += "そのようなディレクトリは存在しません:モーション";
                 }
@@ -1084,6 +1169,53 @@ namespace EnvironmentMaker {
             //print(errMessage);
         }
 
+        private void SetPointCloud(string motionName, Vector2? start, Vector2? end) {
+            var pos = GetScreenPos(mainCamera.transform.position);
+            pos.y = 0.8f;
+            var pcObj = Instantiate(PointCloudPrehab, pos, Quaternion.identity) as GameObject;
+            var pc = pcObj.GetComponent<PointCloud>();
+            if (pc != null) {
+                pc.DirName = motionName;
+            }
+            pc.Initialize(start, end);
+            undoAct = () => {
+                Destroy(pcObj.gameObject);
+            };
+        }
+
+        private void SetBackGround(Texture2D texture) {
+            var material = Back.GetComponent<MeshRenderer>().sharedMaterial;
+            material.mainTexture = texture;
+            Back.gameObject.SetActive(true);
+        }
+
+        private void SetGround(Sprite sprite) {
+            var meshRenderer = baseGround.GetComponent<MeshRenderer>();
+            meshRenderer.enabled = false;
+            Material material = meshRenderer.sharedMaterial;
+            material.color = spriteColor;
+            var texture = sprite.texture;
+            var list = new List<Vector2>();
+            var scale = baseGround.transform.localScale;
+            if (groundTexture == null) {
+                if (texture.height > texture.width) {
+                    var ratio = (float)texture.height / texture.width;
+                    baseGround.transform.localScale = new Vector3(scale.x, scale.y, scale.z * ratio);
+                } else {
+                    var ratio = (float)texture.width / texture.height;
+                    baseGround.transform.localScale = new Vector3(scale.x * ratio, scale.y, scale.z);
+                }
+                material.mainTexture = texture;
+            }
+            groundTexture = texture;
+            var obj = CreateSpriteObject(Vector3.zero, Texture2DToSprite(texture));
+            textureRects[textureRects.Count - 1] = new Rect(0, 0, 1, 1);
+            obj.transform.localEulerAngles = new Vector3(90, 0, 0);
+            float x = 3.65f * Math.Max(2750f / texture.width, 11470f / texture.height);
+            obj.transform.localScale = new Vector3(x, x, 1);
+            obj.GetComponent<SpriteRenderer>().sortingLayerID = Functions.SortingLayerUniqueIDs[layer];
+        }
+
         private IEnumerator<GameObject> CreateRiver() {
             createRiver = false;
             var texture = textures[4];
@@ -1111,12 +1243,15 @@ namespace EnvironmentMaker {
                 while (mag < threshold * threshold || angle >= 0 && angle < Math.PI / 2) {
                     position = new Vector3(createPosition.x, 0, createPosition.y);
                     Vector3 offset = position - firstPosition;
+                    var updownlist = new List<GameObject>();
                     foreach (var r in results) {
                         var clone = Instantiate(r, r.transform.position + offset, Quaternion.identity) as GameObject;
                         clone.name = r.name;
                         clone.transform.localEulerAngles = r.transform.localEulerAngles;
+                        updownlist.Add(r);
                         objects.Add(clone);
                     }
+                    updowns.Add(updownlist);
                     createPosition += diff * texture.width / 100;
                     angle = GetAngle(end - createPosition, end - start);
                     yield return null;

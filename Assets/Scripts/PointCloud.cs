@@ -15,7 +15,7 @@ namespace EnvironmentMaker {
 
         PlyReader reader;
         List<Vector3> bodyposes;
-        int kinectNums = 4;
+        int kinectNums = 3;
         public GameObject Pointer;
         List<GameObject> pointers = new List<GameObject>();
         Vector3[] estimates;
@@ -38,25 +38,19 @@ namespace EnvironmentMaker {
         List<MyTime[]> fileTimes;
 
         public string DirName = "newpolygons";
+        public GameObject SelectedPrehab;
 
         // Use this for initialization
         void Start() {
             mesh = new Mesh();
             reader = new PlyReader();
             fileTimes = new List<MyTime[]>();
+            GetComponent<MeshFilter>().mesh = mesh;
+            SetPolygonData(DirName);
             beforeTime = new int[kinectNums];
             pointsNumbers = new int[kinectNums];
             for (int i = 0; i < pointsNumbers.Length; i++) {
                 pointsNumbers[i] = 0;
-            }
-            GetComponent<MeshFilter>().mesh = mesh;
-            LoadIndexCSV(DirName);
-            var manager = GameObject.FindObjectOfType<PolygonManager>();
-            if (manager.Data.ContainsKey(DirName)) {
-                polygonData = manager.Data[DirName];
-                loadEnd = true;
-            } else {
-                LoadModels(DirName);
             }
             frameAmount = polygonData.Length;
             //foreach (JointType type in Enum.GetValues(typeof(JointType))) {
@@ -66,17 +60,32 @@ namespace EnvironmentMaker {
             //}
         }
 
+        private void SetPolygonData(string name) {
+            var manager = GameObject.FindObjectOfType<PolygonManager>();
+            if (manager.Data.ContainsKey(name)) {
+                loadEnd = true;
+            } else {
+                LoadModels(name);
+            }
+            PolygonManager.Load(name);
+            polygonData = manager.Data[name];
+            kinectNums = polygonData[0].Positions.Length;
+            LoadIndexCSV(name);
+        }
+
         public void Initialize(Vector2? start, Vector2? end) {
             this.start = start;
             this.end = end;
             if (start.HasValue) {
                 var value = start.Value;
                 this.transform.position = new Vector3(value.x, this.transform.position.y, value.y);
+                Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
                 if (end.HasValue) {
                     Vector2 diff = end.Value - start.Value;
                     double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 4;
                     var angle = this.transform.localEulerAngles;
                     this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
+                    Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
                 }
             }
             //var next = route[nextRouteIndex];
@@ -121,6 +130,9 @@ namespace EnvironmentMaker {
                     beforeTime[i] += (int)Math.Floor(time);
                     int index = pointsNumbers[i];
                     var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
+                    if (index == fileTimes.Count - 1) {
+                        timeDiff = 1000;
+                    }
                     if (beforeTime[i] > timeDiff) {
                         var before = pointsNumbers[i];
                         pointsNumbers[i] = (pointsNumbers[i] + 1) % frameAmount;
@@ -145,16 +157,18 @@ namespace EnvironmentMaker {
                     var startAverage = Functions.AverageVector(start.Select(s => s.GetVector3()).ToList());
                     var lastAverage = Functions.AverageVector(last.Select(s => s.GetVector3()).ToList());
                     var diff = lastAverage - startAverage;
+                    diff.y = 0;
                     var theta = transform.localEulerAngles.y * Math.PI / 180;
                     this.transform.position += diff.RotateXZ(-theta);
                     if (end.HasValue) {
                         Vector2 value = end.Value;
                         Vector3 target = new Vector3(value.x, this.transform.position.y, value.y);
                         float sqrMagnitude = (target - this.transform.position).sqrMagnitude;
-                        double threshold = 3;
                         print(sqrMagnitude);
-                        if (sqrMagnitude < threshold * threshold) {
+                        if (sqrMagnitude > beforeMag) {
                             GotoFirst();
+                        } else {
+                            beforeMag = sqrMagnitude;
                         }
                     } else {
                         float sqrMagnitude = (firstPosition - this.transform.position).sqrMagnitude;
@@ -188,6 +202,24 @@ namespace EnvironmentMaker {
 
         private void GotoFirst() {
             this.transform.position = firstPosition;
+            beforeMag = double.MaxValue;
+        }
+
+        public void AddMotion(string motionName) {
+            PolygonData[] before = polygonData.Clone() as PolygonData[];
+            Vector3 center = Functions.AverageVector(before.Last().Complete.Select(c => c.GetVector3()).ToList());
+            SetPolygonData(motionName);
+            Vector3 newCenter = Functions.AverageVector(polygonData.First().Complete.Select(c => c.GetVector3()).ToList());
+            print(center);
+            print(newCenter);
+            foreach (var pd in polygonData) {
+                for (int i = 0; i < pd.Positions.Length; i++) {
+                    for (int j = 0; j < pd.Positions[i].Length; j++) {
+                        pd.Positions[i][j] += (center - newCenter);
+                    }
+                }
+            }
+            polygonData = before.Concat(polygonData).ToArray();
         }
 
         void LoadIndexCSV(string dir) {
@@ -201,12 +233,29 @@ namespace EnvironmentMaker {
                     str = reader.ReadLine();
                 }
             }
+            var addTimes = new List<MyTime[]>();
             for (int i = 0; i < data.Count; i += kinectNums) {
                 var times = new MyTime[kinectNums];
                 for (int j = 0; j < kinectNums; j++) {
-                    times[j] = ParseTime(data[i][1]);
+                    times[j] = ParseTime(data[i + j][1]);
                 }
-                fileTimes.Add(times);
+                addTimes.Add(times);
+            }
+            if (fileTimes.Count == 0) {
+                fileTimes = addTimes;
+            } else {
+                MyTime[] lastTime = fileTimes.Last();
+                MyTime[] firstTime = addTimes.First();
+                int[] timeDiffs = new int[kinectNums];
+                for (int i = 0; i < kinectNums; i++) {
+                    timeDiffs[i] = lastTime[i].GetMilli() - firstTime[i].GetMilli();
+                }
+                for (int i = 0; i < addTimes.Count; i++) {
+                    for (int j = 0; j < kinectNums; j++) {
+                        addTimes[i][j].AddMilli(timeDiffs[j]);
+                    }
+                }
+                fileTimes = fileTimes.Concat(addTimes).ToList();
             }
         }
 
@@ -216,6 +265,10 @@ namespace EnvironmentMaker {
             while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
                 num++;
             }
+            while (File.Exists($@"{baseDir}\model_0_{kinectNums - 1}.ply")) {
+                kinectNums++;
+            }
+            kinectNums -= 1;
             frameAmount = num;
             polygonData = new PolygonData[num];
             var points = new Point[num][];
@@ -235,6 +288,16 @@ namespace EnvironmentMaker {
                 //ApplyXZ(pointlist);
                 polygonData[n] = new PolygonData(pointlist, true);
                 //yield return n;
+            }
+            var manager = GameObject.FindObjectOfType<PolygonManager>();
+            manager.Data[dir] = polygonData;
+            Vector3 center = Functions.AverageVector(polygonData[0].Complete.Select(p => p.GetVector3()).ToList());
+            foreach (var pd in polygonData) {
+                for (int i = 0; i < pd.Positions.Length; i++) {
+                    for (int j = 0; j < pd.Positions[i].Length; j++) {
+                        pd.Positions[i][j] -= center;
+                    }
+                }
             }
             firstPosition = this.transform.position;
             loadEnd = true;
@@ -355,6 +418,7 @@ namespace EnvironmentMaker {
         }
 
         public void Save(BinaryWriter writer) {
+            writer.Write(DirName);
             writer.Write(start.HasValue);
             if (start.HasValue) {
                 writer.Write(start.Value.x);
@@ -365,11 +429,24 @@ namespace EnvironmentMaker {
                 writer.Write(end.Value.x);
                 writer.Write(end.Value.y);
             }
-            writer.Write(DirName);
         }
 
-        public static void Load(BinaryReader reader) {
-
+        public static Tuple<string, Vector2?, Vector2?> Load(BinaryReader reader) {
+            Vector2? start = null, end = null;
+            string str = reader.ReadString();
+            bool startHasValue = reader.ReadBoolean();
+            if (startHasValue) {
+                float x = reader.ReadSingle();
+                float y = reader.ReadSingle();
+                start = new Vector2(x, y);                
+            }
+            bool endHasValue = reader.ReadBoolean();
+            if (endHasValue) {
+                float x = reader.ReadSingle();
+                float y = reader.ReadSingle();
+                end = new Vector2(x, y);
+            }
+            return Tuple.Create(str, start, end);
         }
     }
 

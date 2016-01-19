@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -30,14 +31,14 @@ namespace EnvironmentMaker {
                 Complete = Complete.Concat(points[i]).ToList();
                 Merge = Merge.Concat(ReducePoints(points[i])).ToList();
             }
+            Offsets = new Dictionary<JointType, Vector3>();
+            PartsCorrestion = new Dictionary<JointType, Vector3>();
+            foreach (JointType type in Enum.GetValues(typeof(JointType))) {
+                Offsets[type] = Vector3.zero;
+                PartsCorrestion[type] = Vector3.zero;
+            }
             if (!simple) {
                 PointToVoxel(Complete);
-                Offsets = new Dictionary<JointType, Vector3>();
-                PartsCorrestion = new Dictionary<JointType, Vector3>();
-                foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    Offsets[type] = Vector3.zero;
-                    PartsCorrestion[type] = Vector3.zero;
-                }
             }
         }
 
@@ -70,8 +71,14 @@ namespace EnvironmentMaker {
             }
             foreach (var d in basedata) {
                 var indexVec = Voxel.GetIndexFromPosition(d.GetVector3());
+                if (indexVec.x == Voxel.Width) indexVec.x -= 1;
+                if (indexVec.y == Voxel.Height) indexVec.y -= 1;
+                if (indexVec.z == Voxel.Depth) indexVec.z -= 1;
                 Voxel[(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
                 var aindex = AnotherVoxel.GetIndexFromPosition(d.GetVector3());
+                if (aindex.x == AnotherVoxel.Width) aindex.x -= 1;
+                if (aindex.y == AnotherVoxel.Height) aindex.y -= 1;
+                if (aindex.z == AnotherVoxel.Depth) aindex.z -= 1;
                 AnotherVoxel[(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
             }
             for (int i = 0; i < width; i++) {
@@ -198,11 +205,43 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-            if ((result - anotherResult).magnitude > 4) {
-                return ((index - result).magnitude < (index - anotherResult).magnitude ? result : anotherResult);
+            return ((index - result).magnitude < (index - anotherResult).magnitude ? result : anotherResult);
+        }
+
+        public void Save(BinaryWriter bwriter) {
+            bwriter.Write(Offsets.Count);
+            foreach (var o in Offsets) {
+                bwriter.Write((int)o.Key);
+                bwriter.Write(o.Value.x);
+                bwriter.Write(o.Value.y);
+                bwriter.Write(o.Value.z);
             }
-            Vector3 ret = (result + anotherResult) * 0.5f;
-            return new Vector3((int)ret.x, (int)ret.y, (int)ret.z);
+            bwriter.Write(PartsCorrestion.Count);
+            foreach (var pc in PartsCorrestion) {
+                bwriter.Write((int)pc.Key);
+                bwriter.Write(pc.Value.x);
+                bwriter.Write(pc.Value.y);
+                bwriter.Write(pc.Value.z);
+            }
+        }
+
+        public void Load(BinaryReader breader) {
+            int offsetsCount = breader.ReadInt32();
+            for (int i = 0; i < offsetsCount; i++) {
+                JointType type = (JointType)breader.ReadInt32();
+                float x = breader.ReadSingle();
+                float y = breader.ReadSingle();
+                float z = breader.ReadSingle();
+                Offsets[type] = new Vector3(x, y, z);
+            }
+            int partsCount = breader.ReadInt32();
+            for (int i = 0; i < partsCount; i++) {
+                JointType type = (JointType)breader.ReadInt32();
+                float x = breader.ReadSingle();
+                float y = breader.ReadSingle();
+                float z = breader.ReadSingle();
+                PartsCorrestion[type] = new Vector3(x, y, z);
+            }
         }
     }
 }

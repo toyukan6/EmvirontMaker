@@ -13,6 +13,10 @@ namespace EnvironmentMaker {
             set { voxel[i, j, k] = value; }
         }
 
+        public int Width => voxel.GetLength(0);
+        public int Height => voxel.GetLength(1);
+        public int Depth => voxel.GetLength(2);
+
         double startX;
         double startY;
         double startZ;
