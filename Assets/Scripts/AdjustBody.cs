@@ -271,11 +271,19 @@ namespace EnvironmentMaker {
             JointType[] partsTypes = joints.Select(p => (JointType)Enum.Parse(typeof(JointType), p)).ToArray();
             var allNumbers = Enumerable.Range(0, FrameAmount).ToList();
             reworkIndexes.ForEach(i => allNumbers.Remove(i));
+            int depth = 1;
+            var already = new List<int>();
+            var search = new List<int>();
+            reworkIndexes.ForEach(r => already.Add(r));
+            var remove = new List<int>();
             for (int i = 0; i < partsTypes.Length; i++) {
                 bool handMade = false;
                 var histgrams = new List<double[]>();
                 var chistgrams = new List<double[]>();
                 JointType firstJoint = partsTypes[i];
+                if (firstJoint == JointType.WristRight) {
+                    int a = 0;
+                }
                 var existsIndexes = new Dictionary<int, Vector3>();
                 var existsCIndexes = new Dictionary<int, Vector3>();
                 for (int j = 0; j < reworkIndexes.Count; j++) {
@@ -289,15 +297,21 @@ namespace EnvironmentMaker {
                             var chistgram = polygonData[nextIndex].ColorHistgram[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
                             if (histgram != null) {
                                 histgrams.Add(histgram);
-                                existsIndexes.Add(j, nextIndexFirstJointIndex);
+                                existsIndexes.Add(nextIndex, nextIndexFirstJointIndex);
                             }
                             if (chistgram != null) {
                                 chistgrams.Add(chistgram);
-                                existsCIndexes.Add(j, nextIndexFirstJointIndex);
+                                existsCIndexes.Add(nextIndex, nextIndexFirstJointIndex);
                             }
+                            if (histgram == null && chistgram == null) {
+                                remove.Add(nextIndex);
+                            }
+                        } else {
+                            remove.Add(nextIndex);
                         }
                     }
                 }
+                remove.ForEach(r => reworkIndexes.Remove(r));
                 Vector3 histVec = Vector3.zero, histCVec = Vector3.zero;
                 double[] averageHistgram = null, averageCHistgram = null;
                 if (histgrams.Count > 0) {
@@ -313,32 +327,48 @@ namespace EnvironmentMaker {
                     }
                 }
                 var notFoundIndexes = new List<int>();
-                foreach (int j in allNumbers) {
-                    if (averageHistgram != null)
-                        histVec = SearchHistgram(averageHistgram, j, existsIndexes, firstJoint);
-                    if (averageCHistgram != null)
-                        histCVec = SearchHistgram(averageCHistgram, j, existsIndexes, firstJoint);
-                    Vector3 result = Vector3.zero;
-                    if (histVec != Vector3.zero && histCVec != Vector3.zero) {
-                        result = (histVec + histCVec) / 2;
-                    } else if (histCVec != Vector3.zero) {
-                        result = histCVec;
-                    } else if (histVec != Vector3.zero) {
-                        result = histVec;
-                    } else {
-                        notFoundIndexes.Add(j);
-                    }
-                    if (result != Vector3.zero)
-                        print($"{j}の{firstJoint}:{result}");
-                    if (polygonData[j].PartsCorrestion[firstJoint] != Vector3.zero) {
-                        float alpha = 0.5f;
-                        polygonData[j].PartsCorrestion[firstJoint] *= alpha;
-                        polygonData[j].PartsCorrestion[firstJoint] += (1 - alpha) * result;
-                    } else {
-                        polygonData[j].PartsCorrestion[firstJoint] = result;
+                if (reworkIndexes.Count > 0) {
+                    while (already.Count < FrameAmount) {
+                        foreach (var ri in reworkIndexes) {
+                            int plus = ri + depth;
+                            int minus = ri - depth;
+                            if (plus < FrameAmount) {
+                                if (!already.Contains(plus)) {
+                                    search.Add(plus);
+                                    already.Add(plus);
+                                }
+                            }
+                            if (minus >= 0) {
+                                if (!already.Contains(minus)) {
+                                    search.Add(minus);
+                                    already.Add(minus);
+                                }
+                            }
+                        }
+                        depth++;
                     }
                 }
-                if (handMade) {
+                foreach (var s in search) {
+                        if (averageHistgram != null)
+                            histVec = SearchHistgram(averageHistgram, s, existsIndexes, firstJoint);
+                        if (averageCHistgram != null)
+                            histCVec = SearchHistgram(averageCHistgram, s, existsIndexes, firstJoint);
+                        Vector3 result = Vector3.zero;
+                        if (histVec != Vector3.zero && histCVec != Vector3.zero) {
+                            result = (histVec + histCVec) / 2;
+                        } else if (histCVec != Vector3.zero) {
+                            result = histCVec;
+                        } else if (histVec != Vector3.zero) {
+                            result = histVec;
+                        } else {
+                            notFoundIndexes.Add(s);
+                        }
+                        if (result != Vector3.zero) {
+                            print($"{s}の{firstJoint}:{result}");
+                            polygonData[s].PartsCorrestion[firstJoint] = result;
+                        }
+                    }
+                if (handMade && notFoundIndexes.Count > 0) {
                     var startAndEnd = new List<Tuple<int, int>>();
                     int before = -1, start = -1, end = -1;
                     for (int j = 0; j < notFoundIndexes.Count; j++) {
@@ -380,11 +410,15 @@ namespace EnvironmentMaker {
         }
 
         private Vector3 SearchHistgram(double[] averageHistgram, int k, Dictionary<int, Vector3> existsIndexes, JointType firstJoint) {
-            var histgramIndexes = new List<Vector3>();
             int index = existsIndexes.Keys.ToList().IndexOfMin(i => Math.Abs(k - i));
             int key = existsIndexes.Keys.ToList()[index];
             Vector3 histgramIndex = polygonData[k].SearchHistgram(averageHistgram, existsIndexes[key]);
-            existsIndexes.Add(k, histgramIndex);
+            if (existsIndexes.ContainsKey(k)) {
+                Vector3 average = (existsIndexes[k] + histgramIndex) * 0.5f;
+                existsIndexes[k] = new Vector3((int)average.x, (int)average.y, (int)average.z);
+            } else {
+                existsIndexes[k] = histgramIndex;
+            }
             Vector3 position = polygonData[k].Voxel.GetPositionFromIndex(histgramIndex);
             return this.transform.position + position - firstBodyParts[k, (int)firstJoint];
         }
@@ -689,6 +723,10 @@ namespace EnvironmentMaker {
             if (GUI.Button(new Rect(700, 0, 100, 100), "終わる")) {
                 SaveData();
                 Application.LoadLevel("Second");
+            }
+
+            if (GUI.Button(new Rect(600, 0, 100, 100), "保存")) {
+                SaveData();
             }
 
             var beforeDir = tmpDirName;

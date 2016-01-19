@@ -82,7 +82,7 @@ namespace EnvironmentMaker {
                 Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
                 if (end.HasValue) {
                     Vector2 diff = end.Value - start.Value;
-                    double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 4;
+                    double theta = Math.Atan2(-diff.y, diff.x);// - Math.PI / 4;
                     var angle = this.transform.localEulerAngles;
                     this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
                     Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
