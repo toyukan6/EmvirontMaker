@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MathNet.Numerics.Statistics;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,32 +10,33 @@ using UnityLib;
 
 namespace EnvironmentMaker {
     class PolygonData {
-        public Vector3[][] Positions => points.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
-        public Color[][] Colors => points.Select(v => v.Select(p => p.GetColor()).ToArray()).ToArray();
-        public List<Point> Complete { get {
-                var c = new List<Point>();
-                foreach (var p in points)
-                    c = c.Concat(p).ToList();
-                return c;
-            }
-        }
-        public List<Point> Merge { get {
-                var c = new List<Point>();
-                foreach (var p in points)
-                    c = c.Concat(ReducePoints(p)).ToList();
-                return c;
-            }
-        }
+        public Vector3[][] Positions { get; private set; }
+        public Color[][] Colors { get; private set; }
+        public List<Point> Complete { get; private set; }
+        public List<Point> Merge { get; private set; }
         public Voxel<List<Point>> Voxel { get; private set; }
         public Voxel<List<Point>> AnotherVoxel { get; private set; }
         const int SECTIONNUMBER = 64;
         public Dictionary<JointType, Vector3> Offsets { get; private set; }
         public Dictionary<JointType, Vector3> PartsCorrestion { get; private set; }
         public double[] WholeHistgram { get; private set; }
-        private List<Point>[] points;
-
-        public PolygonData(List<Point>[] points, bool simple = false) {
-            this.points = points;
+        public List<Point>[] Points;
+        public Vector3 Estimate { get; private set; }
+        public string Name { get; private set; }
+        public Dictionary<JointType, Vector3> BodyList { get; private set; }
+        public PolygonData(string name, List<Point>[] points, bool simple = false) {
+            Name = name;
+            this.Points = points;
+            Positions = new Vector3[points.Length][];
+            Colors = new Color[points.Length][];
+            Complete = new List<Point>();
+            Merge = new List<Point>();
+            for (int i = 0; i < points.Length; i++) {
+                Positions[i] = points[i].Select(p => p.GetVector3()).ToArray();
+                Colors[i] = points[i].Select(p => p.GetColor()).ToArray();
+                Complete = Complete.Concat(points[i]).ToList();
+                Merge = Merge.Concat(ReducePoints(points[i])).ToList();
+            }
             Offsets = new Dictionary<JointType, Vector3>();
             PartsCorrestion = new Dictionary<JointType, Vector3>();
             foreach (JointType type in Enum.GetValues(typeof(JointType))) {
@@ -45,6 +47,95 @@ namespace EnvironmentMaker {
                 PointToVoxel(Complete);
                 WholeHistgram = Histogram(Magnitudes(Complete.Select(c => c.GetVector3()).ToList()));
             }
+        }
+
+        public void SetBodyDump(Dictionary<JointType, Vector3> dump) {
+            BodyList = dump;
+        }
+
+        public List<Point> SetFirstEstimate() {
+            var sborder = BorderPoints(Complete);
+            ////yield return 0;
+            var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
+            var standard = sborder.Find(s => Math.Abs(s.Average(v => v.Y)) == ymed);
+            Estimate = Functions.AverageVector(standard.Select(s => s.GetVector3()).ToList());
+            return standard;
+        }
+
+        List<List<Point>> BorderPoints(List<Point> points) {
+            var dictionary = new List<KeyValuePair<double, List<Point>>>();
+            var border = new List<List<Point>>();
+            var tmp = new List<Point>();
+            foreach (var v in points) {
+                tmp.Add(v);
+            }
+            tmp.Sort((t1, t2) => Math.Sign(t1.Y - t2.Y));
+            while (tmp.Count > 0) {
+                var v = tmp[0];
+                var near = tmp.TakeWhile(t => Math.Abs(t.Y - v.Y) < 20).ToList();
+                foreach (var n in near) {
+                    tmp.Remove(n);
+                }
+                near.Sort((n1, n2) => Math.Sign(n1.GetVector3().sqrMagnitude - n2.GetVector3().sqrMagnitude));
+                if (near.Count > 1) {
+                    var lengthes = new List<double>();
+                    var tmp2 = new Point[near.Count];
+                    near.CopyTo(tmp2);
+                    var max = Math.Sqrt(near.Count);
+                    for (int i = 0; i < max && near.Count > 0; i++) {
+                        var first = near.First();
+                        var last = near.Last();
+                        near.Remove(first);
+                        near.Remove(last);
+                        lengthes.Add((first.GetColor() - last.GetColor()).SqrLength());
+                    }
+                    var median = lengthes.Median();
+                    dictionary.Add(new KeyValuePair<double, List<Point>>(median, tmp2.ToList()));
+                }
+            }
+            for (int i = 0; i < dictionary.Count; i++) {
+                var nears = dictionary[i].Value;
+                var distance = dictionary.Min(d => {
+                    if (d.Value == nears) {
+                        return double.MaxValue;
+                    } else {
+                        var col1 = Functions.AverageColor(d.Value.Select(s => s.GetColor()).ToList());
+                        var col2 = Functions.AverageColor(nears.Select(s => s.GetColor()).ToList());
+                        return Functions.SubColor(col1, col2).SqrLength();
+                    }
+                });
+                if (distance > 0.001) {
+                    border.Add(dictionary[i].Value);
+                }
+            }
+            return border;
+        }
+
+        public void EstimateHip(List<Point> standard) {
+            var dborder = BorderPoints(Complete);
+            if (dborder.Count > 0) {
+                Func<List<Point>, List<Point>, double> f = (p1, p2) =>
+    Functions.SubColor(Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()), Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
+     + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
+
+                var min = dborder.Min(de => f(standard, de));
+                var target = dborder.Find(d => Math.Abs(f(standard, d) - min) < 0.0000001);
+                var vecs = target.Select(t => t.GetVector3()).ToList();
+                var vec = Functions.AverageVector(vecs);
+                if (Math.Abs(vec.y) < 0.1) {
+                    Estimate = vec;
+                } else {
+                    Estimate = Functions.AverageVector(Complete.Select(s => s.GetVector3()).ToList());
+                }
+            } else {
+                Estimate = Vector3.zero;
+            }
+        }
+
+        public Vector3 PartsPosition(JointType type) {
+            var diff = BodyList[type] - BodyList[JointType.SpineBase];
+            var basePos = Estimate + diff + Offsets[type] + PartsCorrestion[type];
+            return basePos;
         }
 
         public double[] GetVoxelHistgram(Vector3 index) {

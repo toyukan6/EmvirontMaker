@@ -15,8 +15,6 @@ namespace EnvironmentMaker {
         int kinectNums = 3;
         public GameObject Pointer;
         List<GameObject> pointers = new List<GameObject>();
-        Vector3[] estimates;
-        List<Dictionary<JointType, Vector3>> bodyList;
         bool loadEnd = false;
         bool looped = false;
         List<Vector2> route = new List<Vector2>();
@@ -75,7 +73,7 @@ namespace EnvironmentMaker {
             var positions = new Vector3[pointers.Count];
             var thisPos = this.transform.position;
             foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                pointers[(int)type].transform.position = PartsPosition(type, 0);
+                pointers[(int)type].transform.position = this.transform.position + polygonData[0].PartsPosition(type);
             }
             firstBodyParts = new Vector3[FrameAmount, Enum.GetNames(typeof(JointType)).Length];
             baseIndex = 0;
@@ -155,7 +153,7 @@ namespace EnvironmentMaker {
                     var thisPos = this.transform.position;
                     var pn = pointsNumbers[0];
                     foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                        pointers[(int)type].transform.position = PartsPosition(type, pn);
+                        pointers[(int)type].transform.position = this.transform.position + polygonData[pn].PartsPosition(type);
                     }
                     UpdateMesh();
                 } else {
@@ -200,7 +198,7 @@ namespace EnvironmentMaker {
                 var thisPos = this.transform.position;
                 var pn = pointsNumbers[0];
                 foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    pointers[(int)type].transform.position = PartsPosition(type, pn);
+                    pointers[(int)type].transform.position = this.transform.position + polygonData[pn].PartsPosition(type);
                 }
             }
         }
@@ -231,7 +229,7 @@ namespace EnvironmentMaker {
                 var positions = new Vector3[pointers.Count];
                 var thisPos = this.transform.position;
                 foreach (JointType type in Enum.GetValues(typeof(JointType))) {
-                    firstBodyParts[i, (int)type] = PartsPosition(type, i);
+                    firstBodyParts[i, (int)type] = this.transform.position + polygonData[i].PartsPosition(type);
                 }
             }
             var reworkIndexes = new List<int>();
@@ -390,12 +388,12 @@ namespace EnvironmentMaker {
                         start = startAndEnd[j].First - 1;
                         end = startAndEnd[j].Second;
                         try {
-                            Vector3 startPosition = PartsPosition(firstJoint, start);
-                            Vector3 endPosition = PartsPosition(firstJoint, end + 1);
+                            Vector3 startPosition = polygonData[start].PartsPosition(firstJoint);
+                            Vector3 endPosition = polygonData[end + 1].PartsPosition(firstJoint);
                             Vector3 move = (endPosition - startPosition) / (end - start);
                             for (int k = start + 1; k <= end; k++) {
                                 print($"{k}の{firstJoint}を補間");
-                                polygonData[k].PartsCorrestion[firstJoint] = startPosition + move * (k - start) - PartsPosition(firstJoint, k);
+                                polygonData[k].PartsCorrestion[firstJoint] = startPosition + move * (k - start) - polygonData[k].PartsPosition(firstJoint);
                             }
                         } catch (Exception e) {
                             print(e.Message);
@@ -403,12 +401,6 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-        }
-
-        private Vector3 PartsPosition(JointType type, int i) {
-            var diff = bodyList[baseIndex][type] - bodyList[baseIndex][JointType.SpineBase];
-            var basePos = estimates[i % estimates.Length] + diff + polygonData[i].Offsets[type] + polygonData[i].PartsCorrestion[type];
-            return this.transform.position + basePos;
         }
 
         private Vector3 SearchHistgram(double[] averageHistgram, int k, Dictionary<int, Vector3> existsIndexes, JointType firstJoint) {
@@ -434,7 +426,6 @@ namespace EnvironmentMaker {
             FrameAmount = num;
             polygonData = new PolygonData[num];
             var points = new Point[num][];
-            estimates = new Vector3[num];
             for (int n = 0; n < num; n++) {
                 var pointlist = new List<Point>[kinectNums];
                 for (int i = 0; i < kinectNums; i++) {
@@ -465,18 +456,14 @@ namespace EnvironmentMaker {
                     //yield return n;
                 }
                 //ApplyXZ(pointlist);
-                polygonData[n] = new PolygonData(pointlist);
+                polygonData[n] = new PolygonData(dir, pointlist);
                 //yield return n;
             }
-            var sborder = BorderPoints(polygonData[0].Complete);
-            ////yield return 0;
-            var ymed = sborder.Min(s => Math.Abs(s.Average(v => v.Y)));
-            var standard = sborder.Find(s => Math.Abs(s.Average(v => v.Y)) == ymed);
-            estimates[0] = Functions.AverageVector(standard.Select(s => s.GetVector3()).ToList());
+            var standard = polygonData[0].SetFirstEstimate();
             ////yield return 0;
             //InitPartsCorrection();
             for (int i = 1; i < FrameAmount; i++) {
-                EstimateHip(standard, polygonData[i].Complete, i);
+                polygonData[i].EstimateHip(standard);
                 //yield return i;
                 //CalcPartsCorrection(completeMerge[i].ToList(), i);
             }
@@ -529,30 +516,9 @@ namespace EnvironmentMaker {
         void LoadBodyDump(string dir) {
             string filePath = $@"polygons\{dir}\SelectedUserBody.dump";
             var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
-            this.bodyList = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
-        }
-
-        void EstimateHip(List<Point> standard, List<Point> dest, int index) {
-            var dborder = BorderPoints(dest);
-            if (dborder.Count > 0) {
-                Func<List<Point>, List<Point>, double> f = (p1, p2) =>
-    Functions.SubColor(Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()), Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
-     + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
-
-                var min = dborder.Min(de => f(standard, de));
-                var target = dborder.Find(d => Math.Abs(f(standard, d) - min) < 0.0000001);
-                if (target == null && dborder.Count > 0) {
-                    dborder.ForEach(d => print(Math.Abs(f(standard, d) - min)));
-                }
-                var vecs = target.Select(t => t.GetVector3()).ToList();
-                var vec = Functions.AverageVector(vecs);
-                if (Math.Abs(vec.y) < 0.1) {
-                    estimates[index] = vec;
-                } else {
-                    estimates[index] = Functions.AverageVector(dest.Select(s => s.GetVector3()).ToList());
-                }
-            } else {
-                estimates[index] = Vector3.zero;
+            var list = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
+            for (int i = 0; i < list.Count; i++) {
+                polygonData[i].SetBodyDump(list[i]);
             }
         }
 

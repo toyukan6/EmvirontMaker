@@ -18,8 +18,6 @@ namespace EnvironmentMaker {
         int kinectNums = 3;
         public GameObject Pointer;
         List<GameObject> pointers = new List<GameObject>();
-        Vector3[] estimates;
-        List<Dictionary<JointType, Vector3>> bodyList;
         bool looped = false;
         List<Vector2> route = new List<Vector2>();
         int nextRouteIndex = 0;
@@ -30,6 +28,7 @@ namespace EnvironmentMaker {
         private PolygonData[] polygonData;
         private int frameAmount;
         private bool loadEnd = false;
+        private Dictionary<JointType, List<GameObject>> Accessories = new Dictionary<JointType, List<GameObject>>();
 
         private Mesh mesh;
 
@@ -71,6 +70,7 @@ namespace EnvironmentMaker {
             polygonData = manager.Data[name];
             kinectNums = polygonData[0].Positions.Length;
             LoadIndexCSV(name);
+            LoadBodyDump(name);
         }
 
         public void Initialize(Vector2? start, Vector2? end) {
@@ -82,7 +82,7 @@ namespace EnvironmentMaker {
                 Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
                 if (end.HasValue) {
                     Vector2 diff = end.Value - start.Value;
-                    double theta = Math.Atan2(-diff.y, diff.x);// - Math.PI / 4;
+                    double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 2;
                     var angle = this.transform.localEulerAngles;
                     this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
                     Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
@@ -178,6 +178,9 @@ namespace EnvironmentMaker {
                     }
                     looped = false;
                 }
+                foreach (var accessoriy in Accessories) {
+
+                }
                 //var positions = new Vector3[pointers.Count];
                 //var thisPos = this.transform.position;
                 //var pn = pointsNumbers[0];
@@ -272,7 +275,6 @@ namespace EnvironmentMaker {
             frameAmount = num;
             polygonData = new PolygonData[num];
             var points = new Point[num][];
-            estimates = new Vector3[num];
             for (int n = 0; n < num; n++) {
                 var pointlist = new List<Point>[kinectNums];
                 for (int i = 0; i < kinectNums; i++) {
@@ -286,11 +288,15 @@ namespace EnvironmentMaker {
                     //yield return n;
                 }
                 //ApplyXZ(pointlist);
-                polygonData[n] = new PolygonData(pointlist, true);
+                polygonData[n] = new PolygonData(dir, pointlist, true);
                 //yield return n;
             }
             var manager = GameObject.FindObjectOfType<PolygonManager>();
             manager.Data[dir] = polygonData;
+            var standard = polygonData[0].SetFirstEstimate();
+            for (int i = 1; i < frameAmount; i++) {
+                polygonData[i].EstimateHip(standard);
+            }
             Vector3 center = Functions.AverageVector(polygonData[0].Complete.Select(p => p.GetVector3()).ToList());
             foreach (var pd in polygonData) {
                 for (int i = 0; i < pd.Positions.Length; i++) {
@@ -301,6 +307,15 @@ namespace EnvironmentMaker {
             }
             firstPosition = this.transform.position;
             loadEnd = true;
+        }
+
+        void LoadBodyDump(string dir) {
+            string filePath = $@"polygons\{dir}\SelectedUserBody.dump";
+            var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
+            var list = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
+            for (int i = 0; i < list.Count; i++) {
+                polygonData[i].SetBodyDump(list[i]);
+            }
         }
 
         double CalcY(List<List<Point>> source, List<List<Point>> destination) {
@@ -319,79 +334,6 @@ namespace EnvironmentMaker {
             return diffs.Median();
         }
 
-        List<List<Point>> BorderPoints(List<Point> points) {
-            var dictionary = new List<KeyValuePair<double, List<Point>>>();
-            var border = new List<List<Point>>();
-            var tmp = new List<Point>();
-            foreach (var v in points) {
-                tmp.Add(v);
-            }
-            tmp.Sort((t1, t2) => Math.Sign(t1.Y - t2.Y));
-            while (tmp.Count > 0) {
-                var v = tmp[0];
-                var near = tmp.TakeWhile(t => Math.Abs(t.Y - v.Y) < 20).ToList();
-                foreach (var n in near) {
-                    tmp.Remove(n);
-                }
-                near.Sort((n1, n2) => Math.Sign(n1.GetVector3().sqrMagnitude - n2.GetVector3().sqrMagnitude));
-                if (near.Count > 1) {
-                    var lengthes = new List<double>();
-                    var tmp2 = new Point[near.Count];
-                    near.CopyTo(tmp2);
-                    var max = Math.Sqrt(near.Count);
-                    for (int i = 0; i < max && near.Count > 0; i++) {
-                        var first = near.First();
-                        var last = near.Last();
-                        near.Remove(first);
-                        near.Remove(last);
-                        lengthes.Add((first.GetColor() - last.GetColor()).SqrLength());
-                    }
-                    var median = lengthes.Median();
-                    dictionary.Add(new KeyValuePair<double, List<Point>>(median, tmp2.ToList()));
-                }
-            }
-            for (int i = 0; i < dictionary.Count; i++) {
-                var nears = dictionary[i].Value;
-                var distance = dictionary.Min(d => {
-                    if (d.Value == nears) {
-                        return double.MaxValue;
-                    } else {
-                        var col1 = Functions.AverageColor(d.Value.Select(s => s.GetColor()).ToList());
-                        var col2 = Functions.AverageColor(nears.Select(s => s.GetColor()).ToList());
-                        return Functions.SubColor(col1, col2).SqrLength();
-                    }
-                });
-                if (distance > 0.001) {
-                    border.Add(dictionary[i].Value);
-                }
-            }
-            return border;
-        }
-
-        void EstimateHip(List<Point> standard, List<Point> dest, int index) {
-            var dborder = BorderPoints(dest);
-            if (dborder.Count > 0) {
-                Func<List<Point>, List<Point>, double> f = (p1, p2) =>
-    Functions.SubColor(Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()), Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
-     + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
-
-                var min = dborder.Min(de => f(standard, de));
-                var target = dborder.Find(d => Math.Abs(f(standard, d) - min) < 0.0000001);
-                if (target == null && dborder.Count > 0) {
-                    dborder.ForEach(d => print(Math.Abs(f(standard, d) - min)));
-                }
-                var vecs = target.Select(t => t.GetVector3()).ToList();
-                var vec = Functions.AverageVector(vecs);
-                if (Math.Abs(vec.y) < 0.1) {
-                    estimates[index] = vec;
-                } else {
-                    estimates[index] = Functions.AverageVector(dest.Select(s => s.GetVector3()).ToList());
-                }
-            } else {
-                estimates[index] = Vector3.zero;
-            }
-        }
-
         MyTime ParseTime(string str) {
             var split = str.Split(new[] { ":" }, StringSplitOptions.RemoveEmptyEntries);
             int hour, minute, second, millisecond;
@@ -400,21 +342,6 @@ namespace EnvironmentMaker {
             if (!int.TryParse(split[2], out second)) return null;
             if (!int.TryParse(split[3], out millisecond)) return null;
             return new MyTime(hour, minute, second, millisecond);
-        }
-
-        void LoadBody(string dir) {
-            using (StreamReader reader = new StreamReader($@"polygons\{dir}\bodyposes.txt")) {
-                string str = reader.ReadLine();
-                while(str != null) {
-                    var split = str.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-                    int x = int.Parse(split[1]);
-                    int y = int.Parse(split[2]);
-                    int z = int.Parse(split[3]);
-                    var point = new Point(x, y, z, 0, 0, 0);
-                    bodyposes.Add(point.GetVector3() / 1000);
-                    str = reader.ReadLine();
-                }
-            }
         }
 
         public void Save(BinaryWriter writer) {

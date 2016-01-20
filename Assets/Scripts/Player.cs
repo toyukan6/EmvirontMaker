@@ -292,7 +292,7 @@ namespace EnvironmentMaker {
         }
 
         private void Update() {
-            var test = DealComm.receivedHueVoxData;
+            var test = DealComm.receivedBodyData;
             print(test?.Length);
             if (editMode) {
                 EditModeUpdate();
