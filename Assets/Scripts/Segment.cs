@@ -312,6 +312,10 @@ namespace EnvironmentMaker {
         public static float SqrLength(this Color color) {
             return color.r * color.r + color.g * color.g + color.b * color.b;
         }
+
+        public static Vector3 ToVector3(this Color color) {
+            return new Vector3(color.r, color.g, color.b);
+        }
     }
     struct Vector {
         public int X { get; private set; }

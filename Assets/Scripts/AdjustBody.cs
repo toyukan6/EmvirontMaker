@@ -179,8 +179,13 @@ namespace EnvironmentMaker {
                 for (int i = 0; i < kinectNums; i++) {
                     if (!stopped) {
                         beforeTime[i] += (int)Math.Floor(time);
+                        int timeDiff = 0;
                         int index = pointsNumbers[i];
-                        var timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
+                        try {
+                            timeDiff = fileTimes[(index + 1) % fileTimes.Count][i].GetMilli() - fileTimes[index][i].GetMilli();
+                        } catch (ArgumentOutOfRangeException e) {
+                            print(e.Message);
+                        }
                         if (beforeTime[i] > timeDiff) {
                             var before = pointsNumbers[i];
                             pointsNumbers[i] = (pointsNumbers[i] + 1) % FrameAmount;
@@ -281,9 +286,6 @@ namespace EnvironmentMaker {
                 var histgrams = new List<double[]>();
                 var chistgrams = new List<double[]>();
                 JointType firstJoint = partsTypes[i];
-                if (firstJoint == JointType.WristRight) {
-                    int a = 0;
-                }
                 var existsIndexes = new Dictionary<int, Vector3>();
                 var existsCIndexes = new Dictionary<int, Vector3>();
                 for (int j = 0; j < reworkIndexes.Count; j++) {
@@ -293,8 +295,8 @@ namespace EnvironmentMaker {
                         var nextIndexFirstJointIndex = polygonData[nextIndex].Voxel.GetIndexFromPosition(firstBodyParts[nextIndex, (int)firstJoint] - this.transform.position);
                         var nextIndexFirstJointVoxel = polygonData[nextIndex].Voxel[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
                         if (nextIndexFirstJointVoxel.Count > 0) {
-                            var histgram = polygonData[nextIndex].Histgram[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
-                            var chistgram = polygonData[nextIndex].ColorHistgram[(int)nextIndexFirstJointIndex.x, (int)nextIndexFirstJointIndex.y, (int)nextIndexFirstJointIndex.z];
+                            var histgram = polygonData[nextIndex].GetVoxelHistgram(nextIndexFirstJointIndex);
+                            var chistgram = polygonData[nextIndex].GetColorHistgram(nextIndexFirstJointIndex);
                             if (histgram != null) {
                                 histgrams.Add(histgram);
                                 existsIndexes.Add(nextIndex, nextIndexFirstJointIndex);

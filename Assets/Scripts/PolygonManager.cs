@@ -9,7 +9,9 @@ namespace EnvironmentMaker {
     class PolygonManager : MonoBehaviour {
         public static PolygonManager Instance { get; private set; }
         public Dictionary<string, PolygonData[]> Data { get; private set; } = new Dictionary<string, PolygonData[]>();
+        public Dictionary<string, double[]> Histgrams { get; private set; } = new Dictionary<string, double[]>();
         static string extensions = ".pldt";
+        static string histgramsDataName = "motion.dat";
 
         private void Awake() {
             if (Instance != null) {
@@ -20,7 +22,9 @@ namespace EnvironmentMaker {
             }
         }
 
-        private void Start() { }
+        private void Start() {
+            LoadHistgrams();
+        }
 
         public static void Save() {
             foreach (var d in Instance.Data) {
@@ -34,6 +38,7 @@ namespace EnvironmentMaker {
                     }
                 }
             }
+            SaveHistgrams();
         }
 
         public static void Load(string key) {
@@ -46,6 +51,40 @@ namespace EnvironmentMaker {
                             for (int i = 0; i < length; i++) {
                                 Instance.Data[key][i].Load(breader);
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void SaveHistgrams() {
+            using (var stream = new FileStream(histgramsDataName, FileMode.OpenOrCreate)) {
+                using (var bwriter = new BinaryWriter(stream)) {
+                    bwriter.Write(Instance.Histgrams.Count);
+                    foreach (var h in Instance.Histgrams) {
+                        bwriter.Write(h.Key);
+                        bwriter.Write(h.Value.Length);
+                        for (int i = 0; i < h.Value.Length; i++) {
+                            bwriter.Write(h.Value[i]);
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void LoadHistgrams() {
+            if (File.Exists(histgramsDataName)) {
+                using (var stream = new FileStream(histgramsDataName, FileMode.OpenOrCreate)) {
+                    using (var breader = new BinaryReader(stream)) {
+                        int hcount = breader.ReadInt32();
+                        for (int i = 0; i < hcount; i++) {
+                            string key = breader.ReadString();
+                            int count = breader.ReadInt32();
+                            var histgram = new double[count];
+                            for (int j = 0; j < count; j++) {
+                                histgram[j] = breader.ReadDouble();
+                            }
+                            Instance.Histgrams[key] = histgram;
                         }
                     }
                 }

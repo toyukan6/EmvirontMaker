@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -8,29 +9,32 @@ using UnityLib;
 
 namespace EnvironmentMaker {
     class PolygonData {
-        public Vector3[][] Positions { get; private set; }
-        public Color[][] Colors { get; private set; }
-        public List<Point> Complete { get; private set; }
-        public List<Point> Merge { get; private set; }
+        public Vector3[][] Positions => points.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
+        public Color[][] Colors => points.Select(v => v.Select(p => p.GetColor()).ToArray()).ToArray();
+        public List<Point> Complete { get {
+                var c = new List<Point>();
+                foreach (var p in points)
+                    c = c.Concat(p).ToList();
+                return c;
+            }
+        }
+        public List<Point> Merge { get {
+                var c = new List<Point>();
+                foreach (var p in points)
+                    c = c.Concat(ReducePoints(p)).ToList();
+                return c;
+            }
+        }
         public Voxel<List<Point>> Voxel { get; private set; }
         public Voxel<List<Point>> AnotherVoxel { get; private set; }
-        public double[,,][] Histgram { get; private set; }
-        public double[,,][] AnotherHistgram { get; private set; }
-        public double[,,][] ColorHistgram { get; private set; }
-        public double[,,][] AnotherColorHistgram { get; private set; }
         const int SECTIONNUMBER = 64;
         public Dictionary<JointType, Vector3> Offsets { get; private set; }
         public Dictionary<JointType, Vector3> PartsCorrestion { get; private set; }
+        public double[] WholeHistgram { get; private set; }
+        private List<Point>[] points;
 
         public PolygonData(List<Point>[] points, bool simple = false) {
-            Positions = points.Select(v => v.Select(p => p.GetVector3()).ToArray()).ToArray();
-            Colors = points.Select(v => v.Select(p => p.GetColor()).ToArray()).ToArray();
-            Complete = new List<Point>();
-            Merge = new List<Point>();
-            for (int i = 0; i < points.Length; i++) {
-                Complete = Complete.Concat(points[i]).ToList();
-                Merge = Merge.Concat(ReducePoints(points[i])).ToList();
-            }
+            this.points = points;
             Offsets = new Dictionary<JointType, Vector3>();
             PartsCorrestion = new Dictionary<JointType, Vector3>();
             foreach (JointType type in Enum.GetValues(typeof(JointType))) {
@@ -39,7 +43,44 @@ namespace EnvironmentMaker {
             }
             if (!simple) {
                 PointToVoxel(Complete);
+                WholeHistgram = Histogram(Magnitudes(Complete.Select(c => c.GetVector3()).ToList()));
             }
+        }
+
+        public double[] GetVoxelHistgram(Vector3 index) {
+            return GetVoxelHistgram((int)index.x, (int)index.y, (int)index.z);
+        }
+
+        public double[] GetVoxelHistgram(int i, int j, int k) {
+            List<Vector3> vectors = Voxel[i, j, k].Select(v => v.GetVector3()).ToList();
+            return Histogram(BetweenMagnitudes(vectors));
+        }
+
+        public double[] GetAnotherVoxelHistgram(Vector3 index) {
+            return GetAnotherVoxelHistgram((int)index.x, (int)index.y, (int)index.z);
+        }
+
+        public double[] GetAnotherVoxelHistgram(int i, int j, int k) {
+            List<Vector3> vectors = AnotherVoxel[i, j, k].Select(v => v.GetVector3()).ToList();
+            return Histogram(BetweenMagnitudes(vectors));
+        }
+
+        public double[] GetColorHistgram(Vector3 index) {
+            return GetColorHistgram((int)index.x, (int)index.y, (int)index.z);
+        }
+
+        public double[] GetColorHistgram(int i, int j, int k) {
+            List<Vector3> colors = Voxel[i, j, k].Select(v => v.GetColor().ToVector3()).ToList();
+            return Histogram(BetweenMagnitudes(colors));
+        }
+
+        public double[] GetAnotherColorHistgram(Vector3 index) {
+            return GetAnotherColorHistgram((int)index.x, (int)index.y, (int)index.z);
+        }
+
+        public double[] GetAnotherColorHistgram(int i, int j, int k) {
+            List<Vector3> colors = AnotherVoxel[i, j, k].Select(v => v.GetColor().ToVector3()).ToList();
+            return Histogram(BetweenMagnitudes(colors));
         }
 
         void PointToVoxel(List<Point> basedata) {
@@ -57,10 +98,6 @@ namespace EnvironmentMaker {
             int depth = (int)((maxZ - minZ) * inverse);
             Voxel = new Voxel<List<Point>>(width, height, depth, minX, minY, minZ, delta);
             AnotherVoxel = new Voxel<List<Point>>(width, height, depth, minX - delta * 0.5, minY - delta * 0.5, minZ - delta * 0.5, delta);
-            Histgram = new double[width, height, depth][];
-            AnotherHistgram = new double[width, height, depth][];
-            ColorHistgram = new double[width, height, depth][];
-            AnotherColorHistgram = new double[width, height, depth][];
             for (int i = 0; i < width; i++) {
                 for (int j = 0; j < height; j++) {
                     for (int k = 0; k < depth; k++) {
@@ -81,16 +118,6 @@ namespace EnvironmentMaker {
                 if (aindex.z == AnotherVoxel.Depth) aindex.z -= 1;
                 AnotherVoxel[(int)indexVec.x, (int)indexVec.y, (int)indexVec.z].Add(d);
             }
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    for (int k = 0; k < depth; k++) {
-                        Histgram[i, j, k] = Histogram(Voxel[i, j, k].Select(v => v.GetVector3()).ToList());
-                        AnotherHistgram[i, j, k] = Histogram(AnotherVoxel[i, j, k].Select(v => v.GetVector3()).ToList());
-                        ColorHistgram[i, j, k] = Histogram(Voxel[i, j, k].Select(v => Functions.ColorToVector3(v.GetColor())).ToList());
-                        AnotherColorHistgram[i, j, k] = Histogram(AnotherVoxel[i, j, k].Select(v => Functions.ColorToVector3(v.GetColor())).ToList());
-                    }
-                }
-            }
         }
 
         List<Point> ReducePoints(List<Point> points) {
@@ -110,13 +137,7 @@ namespace EnvironmentMaker {
             return result;
         }
 
-        double[] Histogram(List<Vector3> vectors) {
-            var numericGroup = new List<double>();
-            for (int i = 0; i < vectors.Count; i++) {
-                for (int j = i + 1; j < vectors.Count; j++) {
-                    numericGroup.Add((vectors[i] - vectors[j]).magnitude);
-                }
-            }
+        public static double[] Histogram(List<double> numericGroup) {
             if (numericGroup.Count < 2) {
                 return null;
             } else if (numericGroup.All(n => n == numericGroup[0])) {
@@ -160,31 +181,49 @@ namespace EnvironmentMaker {
             }
         }
 
+        public static List<double> Magnitudes(List<Vector3> vectors) {
+            var numericGroup = new List<double>();
+            vectors.ForEach(v => numericGroup.Add(v.magnitude));
+            return numericGroup;
+        }
+
+        public static List<double> BetweenMagnitudes(List<Vector3> vectors) {
+            var numericGroup = new List<double>();
+            for (int i = 0; i < vectors.Count; i++) {
+                for (int j = i + 1; j < vectors.Count; j++) {
+                    numericGroup.Add((vectors[i] - vectors[j]).magnitude);
+                }
+            }
+            return numericGroup;
+        }
+
         public Vector3 SearchHistgram(double[] histgram, Vector3 index) {
-            return SearchHistgramFunction(histgram, Histgram, AnotherHistgram, index);
+            return SearchHistgramFunction(histgram, GetVoxelHistgram, GetAnotherVoxelHistgram, index);
         }
 
         public Vector3 SearchColorHistgram(double[] histgram, Vector3 index) {
-            return SearchHistgramFunction(histgram, ColorHistgram, AnotherColorHistgram, index);
+            return SearchHistgramFunction(histgram, GetColorHistgram, GetAnotherColorHistgram, index);
         }
 
-        Vector3 SearchHistgramFunction(double[] histgram, double[,,][] targetHist, double[,,][] targetAHist, Vector3 index) {
+        Vector3 SearchHistgramFunction(double[] histgram, Func<int, int, int, double[]> targetHist, Func<int, int, int, double[]> targetAHist, Vector3 index) {
             Vector3 result = Vector3.zero, anotherResult = Vector3.zero;
             double minLength = double.MaxValue, anotherminLength = double.MaxValue;
             int depth = 2;
             int minX = (int)Math.Max(index.x - depth, 0);
-            int maxX = (int)Math.Min(index.x + depth, Histgram.GetLength(0));
+            int maxX = (int)Math.Min(index.x + depth, Voxel.Width);
             int minY = (int)Math.Max(index.y - depth, 0);
-            int maxY = (int)Math.Min(index.y + depth, Histgram.GetLength(1));
+            int maxY = (int)Math.Min(index.y + depth, Voxel.Height);
             int minZ = (int)Math.Max(index.z - depth, 0);
-            int maxZ = (int)Math.Min(index.z + depth, Histgram.GetLength(2));
+            int maxZ = (int)Math.Min(index.z + depth, Voxel.Depth);
             for (int i = minX; i < maxX; i++) {
                 for (int j = minY; j < maxY; j++) {
                     for (int k = minZ; k < maxZ; k++) {
                         double length = 0, alength = 0;
-                        if (targetHist[i, j, k] != null) {
+                        double[] target = targetHist(i, j, k);
+                        double[] atarget = targetAHist(i, j, k);
+                        if (target != null) {
                             for (int l = 0; l < histgram.Length; l++) {
-                                length += Math.Pow(Histgram[i, j, k][l] - histgram[l], 2);
+                                length += Math.Pow(target[l] - histgram[l], 2);
                             }
                             length *= ((new Vector3(i, j, k) - index).magnitude + 1);
                             if (length < minLength) {
@@ -192,9 +231,9 @@ namespace EnvironmentMaker {
                                 result = new Vector3(i, j, k);
                             }
                         }
-                        if (targetAHist[i, j, k] != null) {
+                        if (atarget != null) {
                             for (int l = 0; l < histgram.Length; l++) {
-                                alength += Math.Pow(AnotherHistgram[i, j, k][l] - histgram[l], 2);
+                                alength += Math.Pow(atarget[l] - histgram[l], 2);
                             }
                             alength *= ((new Vector3(i, j, k) - index).magnitude + 1);
                             if (alength < anotherminLength) {

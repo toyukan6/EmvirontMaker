@@ -33,6 +33,10 @@ namespace EnvironmentMaker {
         /// セーブファイル名
         /// </summary>
         private string saveFileName = "save.dat";
+        /// <summary>
+        /// モーションデータベース
+        /// </summary>
+        private PolygonManager PolygonManager;
 
         #region エディットモード
         /// <summary>
@@ -242,6 +246,9 @@ namespace EnvironmentMaker {
         /// 歩きモーション終了地点
         /// </summary>
         private Vector2 walkEnd;
+        /// <summary>
+        /// 軌跡の録画モード
+        /// </summary>
         private bool recordMode = false;
         #endregion
 
@@ -281,9 +288,12 @@ namespace EnvironmentMaker {
             var material = baseGround.GetComponent<MeshRenderer>().sharedMaterial;
             material.mainTexture = null;
             controller = this.GetComponentInParent<FirstPersonController>();
+            PolygonManager = GameObject.FindObjectOfType<PolygonManager>();
         }
 
         private void Update() {
+            var test = DealComm.receivedHueVoxData;
+            print(test?.Length);
             if (editMode) {
                 EditModeUpdate();
             } else {
@@ -600,33 +610,6 @@ namespace EnvironmentMaker {
             return result;
         }
 
-        //private void DownGround() {
-        //    Vector3 screenPos = GetScreenPos(Input.mousePosition);
-        //    Vector3 diff = screenPos - this.transform.position;
-        //    double theta = Math.Atan2(-diff.z, diff.x);
-        //    Direction direction;
-        //    if (theta >= -Math.PI * 3 / 4 && theta < -Math.PI / 4) {
-        //        direction = Direction.Up;
-        //    } else if (theta >= -Math.PI / 4 && theta < Math.PI / 4) {
-        //        direction = Direction.Right;
-        //    } else if (theta >= Math.PI / 4 && theta < Math.PI * 3 / 4) {
-        //        direction = Direction.Down;
-        //    } else {
-        //        direction = Direction.Left;
-        //    }
-        //    print(direction);
-        //    baseGround.SetActive(false);
-        //    var newPositions = new Vector3[2];
-
-        //}
-
-        //private GameObject WithinGroundSearch(Vector3 position) {
-        //    for (int i = 0; i < cutGrounds.Count; i++) {
-        //        GameObject ground = cutGrounds[i];
-
-        //    }
-        //}
-
         private void CameraMove() {
             if (Input.GetKey(KeyCode.A)) {
                 mainCamera.transform.position += new Vector3(-0.1f, 0, 0);
@@ -753,8 +736,36 @@ namespace EnvironmentMaker {
                 WalkRecord();
             } 
             if (Input.GetKeyDown(KeyCode.Alpha1)) {
-                CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(textures[0])));
+                var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(textures[0])));
+                undoAct = () => {
+                    Destroy(bill.gameObject);
+                };
             }
+        }
+
+        private string SearchMotionData(List<Vector3>[] points) {
+            var dictionary = new Dictionary<string, int>();
+            foreach (var d in PolygonManager.Data) {
+                dictionary[d.Key] = 0;
+                double minLength = int.MaxValue;
+                int minIndex = -1;
+                for (int i = 0; i < points.Length; i++) {
+                    double[] histgram = PolygonData.Histogram(PolygonData.Magnitudes(points[i]));
+                    for (int j = 0; j < d.Value.Length; j++) {
+                        double length = 0;
+                        for (int k = 0; k < histgram.Length; k++) {
+                            length += Math.Abs(histgram[k] - d.Value[j].WholeHistgram[k]);
+                        }
+                        if (length < minLength) {
+                            minLength = length;
+                            minIndex = j;
+                        }
+                    }
+                    dictionary[d.Key] += Math.Abs(i - minIndex);
+                }
+            }
+            int min = dictionary.Values.Min();
+            return dictionary.First(d => d.Value == min).Key;
         }
 
         private Vector3 GetLookAtPosition() {

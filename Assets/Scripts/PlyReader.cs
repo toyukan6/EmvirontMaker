@@ -8,35 +8,8 @@ using MathNet.Numerics.Statistics;
 
 namespace EnvironmentMaker {
     class PlyReader {
-        Dictionary<double, double[]> ts;
 
-        public PlyReader() {
-            ts = new Dictionary<double, double[]>();
-            double[] alphas = null;
-            List<double>[] values = null;
-            using (StreamReader reader = new StreamReader("grubbs.txt")) {
-                string str = reader.ReadLine();
-                while (str != null) {
-                    var split = str.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
-                    if (alphas == null) {
-                        alphas = new double[split.Length];
-                        values = new List<double>[split.Length];
-                        for (int i = 0; i < split.Length; i++) {
-                            alphas[i] = double.Parse(split[i]);
-                            values[i] = new List<double>();
-                        }
-                    } else {
-                        for (int i = 1; i < split.Length; i++) {
-                            values[i - 1].Add(double.Parse(split[i]));
-                        }
-                    }
-                    str = reader.ReadLine();
-                }
-            }
-            for (int i = 0; i < alphas.Length; i++) {
-                ts.Add(alphas[i], values[i].ToArray());
-            }
-        }
+        public PlyReader() { }
 
         public Point[] Load(string path) {
             var points = new List<Point>();
@@ -59,26 +32,7 @@ namespace EnvironmentMaker {
                     points.Add(MakePoint(data));
                 }
             }
-            RemoveOutlier(points, p => p.GetVector3().sqrMagnitude);
             return points.ToArray();
-        }
-
-        private void RemoveOutlier(List<Point> points, Func<Point, double> function) {
-            var lengthes = points.Select(p => function(p)).ToList();
-            var average = lengthes.Average();
-            var variance = lengthes.Average(l => Math.Pow(l - average, 2));
-            var deviation = Math.Sqrt(variance);
-            double alpha = 0.01;
-            var response = ts[alpha][points.Count - 1];
-            var upper = average + deviation * Math.Sqrt((points.Count + 1.0) / points.Count) * response;
-            var lower = average - deviation * Math.Sqrt((points.Count + 1.0) / points.Count) * response;
-            var removes = new List<Point>();
-            for (int i = 0; i < points.Count; i++) {
-                if (lengthes[i] < lower || lengthes[i] > upper) {
-                    removes.Add(points[i]);
-                }
-            }
-            removes.ForEach(r => points.Remove(r));
         }
 
         public Point MakePoint(string data) {
