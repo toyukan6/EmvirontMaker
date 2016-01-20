@@ -133,9 +133,14 @@ namespace EnvironmentMaker {
         }
 
         public Vector3 PartsPosition(JointType type) {
-            var diff = BodyList[type] - BodyList[JointType.SpineBase];
-            var basePos = Estimate + diff + Offsets[type] + PartsCorrestion[type];
-            return basePos;
+            try {
+                var diff = BodyList[type] - BodyList[JointType.SpineBase];
+                var basePos = Estimate + diff + Offsets[type] + PartsCorrestion[type];
+                return basePos;
+            } catch (KeyNotFoundException e) {
+                string s = e.Message;
+                return Vector3.zero;
+            }
         }
 
         public double[] GetVoxelHistgram(Vector3 index) {

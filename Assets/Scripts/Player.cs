@@ -293,7 +293,7 @@ namespace EnvironmentMaker {
 
         private void Update() {
             var test = DealComm.receivedBodyData;
-            print(test?.Length);
+            print(test?.Count);
             if (editMode) {
                 EditModeUpdate();
             } else {
