@@ -19,7 +19,6 @@ namespace EnvironmentMaker {
         const int SECTIONNUMBER = 64;
         public Dictionary<JointType, Vector3> Offsets { get; private set; }
         public Dictionary<JointType, Vector3> PartsCorrestion { get; private set; }
-        public double[] WholeHistgram { get; private set; }
         public List<Point>[] Points;
         public Vector3 Estimate { get; private set; }
         public string Name { get; private set; }
@@ -45,7 +44,6 @@ namespace EnvironmentMaker {
             }
             if (!simple) {
                 PointToVoxel(Complete);
-                WholeHistgram = Histogram(Magnitudes(Complete.Select(c => c.GetVector3()).ToList()));
             }
         }
 

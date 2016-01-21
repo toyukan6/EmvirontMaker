@@ -20,7 +20,7 @@ namespace EnvironmentMaker {
         List<GameObject> pointers = new List<GameObject>();
         bool looped = false;
         List<Vector2> route = new List<Vector2>();
-        int nextRouteIndex = 0;
+        int nextRouteIndex = 1;
         float length = 10f;
         Vector3 firstPosition;
         Vector2? start;
@@ -39,6 +39,7 @@ namespace EnvironmentMaker {
         public string DirName = "newpolygons";
         public GameObject SelectedPrehab;
 
+
         // Use this for initialization
         void Start() {
             mesh = new Mesh();
@@ -52,6 +53,7 @@ namespace EnvironmentMaker {
                 pointsNumbers[i] = 0;
             }
             frameAmount = polygonData.Length;
+            AddAccessories(JointType.WristRight, Instantiate(Pointer));
             //foreach (JointType type in Enum.GetValues(typeof(JointType))) {
             //    var obj = Instantiate(Pointer) as GameObject;
             //    obj.name = Enum.GetName(typeof(JointType), type);
@@ -73,21 +75,37 @@ namespace EnvironmentMaker {
             LoadBodyDump(name);
         }
 
-        public void Initialize(Vector2? start, Vector2? end) {
-            this.start = start;
-            this.end = end;
+        public void Initialize(List<Vector2> route) {
+            this.route = route;
+            if (route.Count > 0) {
+                this.start = route[0];
+            } else this.start = null;
+            if (route.Count > 1) {
+                this.end = route[1];
+            } else this.end = null;
             if (start.HasValue) {
                 var value = start.Value;
                 this.transform.position = new Vector3(value.x, this.transform.position.y, value.y);
                 Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
                 if (end.HasValue) {
-                    Vector2 diff = end.Value - start.Value;
-                    double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 2;
-                    var angle = this.transform.localEulerAngles;
-                    this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
-                    Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
+                    SetTarget(end.Value);
                 }
             }
+        }
+
+        void SetTarget(Vector2 target) {
+            nextRouteIndex = (nextRouteIndex + 1) % route.Count;
+            Vector2 thisPos = new Vector2(this.transform.position.x, this.transform.position.z);
+            end = target;
+            Vector2 diff = target - thisPos;
+            double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 2;
+            var angle = this.transform.localEulerAngles;
+            this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
+            Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
+        }
+
+        double beforeMag = double.MaxValue;
+        void Update() {
             //var next = route[nextRouteIndex];
             //var nowIndex = pointsNumbers[0];
             //var startAvr = Functions.AverageVector(mergePoints[0].Select(p => p.GetVector3()).ToList());
@@ -110,10 +128,6 @@ namespace EnvironmentMaker {
             //    this.transform.localEulerAngles -= new Vector3(0, 45, 0);
             //}
             //beforeMag = mag;
-        }
-
-        double beforeMag = double.MaxValue;
-        void Update() {
         }
 
         void FixedUpdate() {
@@ -164,9 +178,14 @@ namespace EnvironmentMaker {
                         Vector2 value = end.Value;
                         Vector3 target = new Vector3(value.x, this.transform.position.y, value.y);
                         float sqrMagnitude = (target - this.transform.position).sqrMagnitude;
-                        print(sqrMagnitude);
                         if (sqrMagnitude > beforeMag) {
-                            GotoFirst();
+                            if (nextRouteIndex == 0) {
+                                GotoFirst();
+                            } else {
+                                var next = route[nextRouteIndex];
+                                SetTarget(next);
+                                beforeMag = double.MaxValue;
+                            }
                         } else {
                             beforeMag = sqrMagnitude;
                         }
@@ -178,8 +197,11 @@ namespace EnvironmentMaker {
                     }
                     looped = false;
                 }
-                foreach (var accessoriy in Accessories) {
-
+                int accessIndex = pointsNumbers[0];
+                foreach (var accessory in Accessories) {
+                    var diff = polygonData[accessIndex].PartsPosition(accessory.Key) - polygonData[0].Estimate;
+                    diff = diff.RotateXZ(-this.transform.eulerAngles.y * Math.PI / 180);
+                    accessory.Value.ForEach(a => a.transform.position = this.transform.position + diff);
                 }
                 //var positions = new Vector3[pointers.Count];
                 //var thisPos = this.transform.position;
@@ -206,6 +228,18 @@ namespace EnvironmentMaker {
         private void GotoFirst() {
             this.transform.position = firstPosition;
             beforeMag = double.MaxValue;
+            nextRouteIndex = 1;
+            if (route.Count > 0) {
+                var next = route[nextRouteIndex];
+                SetTarget(next);
+            }
+        }
+
+        public void AddAccessories(JointType type, GameObject accessory) {
+            if (!Accessories.ContainsKey(type)) {
+                Accessories[type] = new List<GameObject>();
+            }
+            Accessories[type].Add(accessory);
         }
 
         public void AddMotion(string motionName) {
@@ -292,7 +326,7 @@ namespace EnvironmentMaker {
                 //yield return n;
             }
             var manager = GameObject.FindObjectOfType<PolygonManager>();
-            manager.Data[dir] = polygonData;
+            manager.SetData(dir, polygonData);
             var standard = polygonData[0].SetFirstEstimate();
             for (int i = 1; i < frameAmount; i++) {
                 polygonData[i].EstimateHip(standard);
@@ -346,34 +380,23 @@ namespace EnvironmentMaker {
 
         public void Save(BinaryWriter writer) {
             writer.Write(DirName);
-            writer.Write(start.HasValue);
-            if (start.HasValue) {
-                writer.Write(start.Value.x);
-                writer.Write(start.Value.y);
-            }
-            writer.Write(end.HasValue);
-            if (end.HasValue) {
-                writer.Write(end.Value.x);
-                writer.Write(end.Value.y);
+            writer.Write(route.Count);
+            foreach (var r in route) {
+                writer.Write(r.x);
+                writer.Write(r.y);
             }
         }
 
-        public static Tuple<string, Vector2?, Vector2?> Load(BinaryReader reader) {
-            Vector2? start = null, end = null;
+        public static Tuple<string, List<Vector2>> Load(BinaryReader reader) {
+            var route = new List<Vector2>();
             string str = reader.ReadString();
-            bool startHasValue = reader.ReadBoolean();
-            if (startHasValue) {
+            int count = reader.ReadInt32();
+            for (int i = 0; i < count; i++) {
                 float x = reader.ReadSingle();
                 float y = reader.ReadSingle();
-                start = new Vector2(x, y);                
+                route.Add(new Vector2(x, y));
             }
-            bool endHasValue = reader.ReadBoolean();
-            if (endHasValue) {
-                float x = reader.ReadSingle();
-                float y = reader.ReadSingle();
-                end = new Vector2(x, y);
-            }
-            return Tuple.Create(str, start, end);
+            return Tuple.Create(str, route);
         }
     }
 

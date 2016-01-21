@@ -292,8 +292,6 @@ namespace EnvironmentMaker {
         }
 
         private void Update() {
-            var test = DealComm.receivedBodyData;
-            print(test?.Count);
             if (editMode) {
                 EditModeUpdate();
             } else {
@@ -730,13 +728,25 @@ namespace EnvironmentMaker {
         }
 
         private void WalkModeUpdate() {
+            //var state = DealComm.connectionState;
+            //print(state);
             var pos = this.transform.position;
             Back.transform.position = pos;
             if (Input.GetKeyDown(KeyCode.Space)) {
                 WalkRecord();
             } 
-            if (Input.GetKeyDown(KeyCode.Alpha1)) {
-                var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(textures[0])));
+            if (recordMode) {
+                recordFrame++;
+                if (recordFrame % 60 == 0) {
+                    Vector2 thisPos = new Vector2(this.transform.position.x, this.transform.position.z);
+                    double threashold = 1;
+                    if ((thisPos - walkLocus.Last()).sqrMagnitude > threashold * threashold) {
+                        walkLocus.Add(thisPos);
+                    }
+                }
+            }
+            if (DealComm.MovingState == 1) {
+                var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(textures[6])));
                 undoAct = () => {
                     Destroy(bill.gameObject);
                 };
@@ -745,16 +755,16 @@ namespace EnvironmentMaker {
 
         private string SearchMotionData(List<Vector3>[] points) {
             var dictionary = new Dictionary<string, int>();
-            foreach (var d in PolygonManager.Data) {
+            foreach (var d in PolygonManager.Histgrams) {
                 dictionary[d.Key] = 0;
-                double minLength = int.MaxValue;
-                int minIndex = -1;
                 for (int i = 0; i < points.Length; i++) {
+                    double minLength = int.MaxValue;
+                    int minIndex = -1;
                     double[] histgram = PolygonData.Histogram(PolygonData.Magnitudes(points[i]));
                     for (int j = 0; j < d.Value.Length; j++) {
                         double length = 0;
                         for (int k = 0; k < histgram.Length; k++) {
-                            length += Math.Abs(histgram[k] - d.Value[j].WholeHistgram[k]);
+                            length += Math.Abs(histgram[k] - d.Value[j][k]);
                         }
                         if (length < minLength) {
                             minLength = length;
@@ -776,13 +786,18 @@ namespace EnvironmentMaker {
             return basePos + diff;
         }
 
+        List<Vector2> walkLocus = new List<Vector2>();
+        int recordFrame = 0;
+
         private void WalkRecord() {
             recordMode = !recordMode;
             if (recordMode) {
+                recordFrame = 0;
+                walkLocus.Clear();
                 walkStart = new Vector2(this.transform.position.x, this.transform.position.z);
+                walkLocus.Add(walkStart);
             } else {
-                walkEnd = new Vector2(this.transform.position.x, this.transform.position.z);
-                SetPointCloud("result", walkStart, walkEnd);
+                SetPointCloud("walk", walkLocus);
             }
         }
 
@@ -1001,8 +1016,8 @@ namespace EnvironmentMaker {
                         }
                         int pcsNumber = breader.ReadInt32();
                         for (int i = 0; i < pcsNumber; i++) {
-                            Tuple<string, Vector2?, Vector2?> tuple = PointCloud.Load(breader);
-                            SetPointCloud(tuple.First, tuple.Second, tuple.Third);
+                            Tuple<string, List<Vector2>> tuple = PointCloud.Load(breader);
+                            SetPointCloud(tuple.First, tuple.Second);
                         }
                     }
                 }
@@ -1111,7 +1126,7 @@ namespace EnvironmentMaker {
                             end = positions[1];
                         }
                     }
-                    SetPointCloud(motionName, start, end);
+                    SetPointCloud(motionName, positions);
                 } else {
                     errMessage += "そのようなディレクトリは存在しません:モーション";
                 }
@@ -1180,7 +1195,7 @@ namespace EnvironmentMaker {
             //print(errMessage);
         }
 
-        private void SetPointCloud(string motionName, Vector2? start, Vector2? end) {
+        private void SetPointCloud(string motionName, List<Vector2> route) {
             var pos = GetScreenPos(mainCamera.transform.position);
             pos.y = 0.8f;
             var pcObj = Instantiate(PointCloudPrehab, pos, Quaternion.identity) as GameObject;
@@ -1188,7 +1203,7 @@ namespace EnvironmentMaker {
             if (pc != null) {
                 pc.DirName = motionName;
             }
-            pc.Initialize(start, end);
+            pc.Initialize(route);
             undoAct = () => {
                 Destroy(pcObj.gameObject);
             };
