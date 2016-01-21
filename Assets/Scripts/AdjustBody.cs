@@ -471,7 +471,7 @@ namespace EnvironmentMaker {
             this.transform.position -= diff;
             firstPosition = this.transform.position;
             if (!manager.Data.ContainsKey(dir)) {
-                manager.Data[dir] = this.polygonData;
+                manager.SetData(dir, this.polygonData);
             }
             loadEnd = true;
         }
@@ -480,12 +480,11 @@ namespace EnvironmentMaker {
             var result = new List<Point>();
             var tmp = new List<Point>();
             int max = points.Length / 10;
-            var rand = new System.Random();
             foreach (var p in points) {
                 tmp.Add(p);
             }
             for (int i = 0; i < max; i++) {
-                var point = tmp[rand.Next(tmp.Count)];
+                var point = tmp[Functions.GetRandomInt(tmp.Count)];
                 result.Add(point);
                 tmp.Remove(point);
             }
@@ -710,7 +709,7 @@ namespace EnvironmentMaker {
         }
 
         private void SaveData() {
-            manager.Data[DirName] = this.polygonData;
+            manager.SetData(DirName, polygonData);
             PolygonManager.Save();
         }
 
