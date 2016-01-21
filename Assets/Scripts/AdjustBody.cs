@@ -517,6 +517,17 @@ namespace EnvironmentMaker {
             string filePath = $@"polygons\{dir}\SelectedUserBody.dump";
             var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
             var list = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
+            if (list.Count < FrameAmount) {
+                var newData = new PolygonData[list.Count];
+                var newTimes = new List<MyTime[]>();
+                for (int i = 0; i < list.Count; i++) {
+                    newData[i] = polygonData[i];
+                    newTimes.Add(fileTimes[i]);
+                }
+                polygonData = newData;
+                fileTimes = newTimes;
+                FrameAmount = list.Count;
+            }
             for (int i = 0; i < list.Count; i++) {
                 polygonData[i].SetBodyDump(list[i]);
             }

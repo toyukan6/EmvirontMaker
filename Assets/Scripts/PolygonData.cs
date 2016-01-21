@@ -138,6 +138,7 @@ namespace EnvironmentMaker {
                 var basePos = Estimate + diff + Offsets[type] + PartsCorrestion[type];
                 return basePos;
             } catch (KeyNotFoundException e) {
+                BodyList[type] = Vector3.zero;
                 string s = e.Message;
                 return Vector3.zero;
             }
