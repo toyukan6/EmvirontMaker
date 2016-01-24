@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace EnvironmentMaker {
@@ -15,14 +15,20 @@ namespace EnvironmentMaker {
         public static int[] SortingLayerUniqueIDs;
 
         public static void Initialize() {
-            Type internalEditorUtilityType = typeof(InternalEditorUtility);
-            var sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerUniqueIDs", BindingFlags.Static | BindingFlags.NonPublic);
-            SortingLayerUniqueIDs = (int[])sortingLayersProperty.GetValue(null, new object[0]);
+            using (var reader = new StreamReader("layer.txt")) {
+                var layers = new List<int>();
+                string str = reader.ReadLine();
+                while (str != null) {
+                    layers.Add(int.Parse(str));
+                    str = reader.ReadLine();
+                }
+                SortingLayerUniqueIDs = layers.ToArray();
+            }
         }
 
-        public static int GetRandomInt(int max) => rand.Next(max);
-        public static double GetRandomDouble() => rand.NextDouble();
-        public static double GetRandomDouble(double min, double max) => rand.NextDouble() * (max - min) + min;
+        public static int GetRandomInt(int max) { return rand.Next(max); }
+        public static double GetRandomDouble() { return rand.NextDouble(); }
+        public static double GetRandomDouble(double min, double max) { return rand.NextDouble() * (max - min) + min; }
 
         public static Vector3 ColorToVector3(Color color) {
             return new Vector3(color.r, color.g, color.b);
@@ -108,6 +114,27 @@ namespace EnvironmentMaker {
 
         public static Vector3 CrossProduct(Vector3 v1, Vector3 v2) {
             return new Vector3(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y - v2.x);
+        }
+
+        public static int LISLength(int[] array) {
+            int[] a = new int[array.Length + 1], l = new int[array.Length + 1], p = new int[array.Length + 1];
+            a[0] = array.Min() - 1;
+            for (int i = 0; i < array.Length; i++) {
+                a[i + 1] = array[i];
+            }
+            for (int i = 0; i < l.Length; i++) {
+                l[i] = 0; p[i] = 0;
+            }
+            for (int i = 1; i < a.Length; i++) {
+                int k = 0;
+                for (int j = 0; j < i; j++) {
+                    if (a[j] < a[i] && l[j] > l[k]) {
+                        k = j;
+                    }
+                }
+                l[i] = l[k] + 1; p[i] = k;
+            }
+            return l.Max();
         }
     }
 }

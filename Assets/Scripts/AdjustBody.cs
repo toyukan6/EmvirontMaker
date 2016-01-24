@@ -364,8 +364,8 @@ namespace EnvironmentMaker {
                             notFoundIndexes.Add(s);
                         }
                         if (result != Vector3.zero) {
-                            print($"{s}の{firstJoint}:{result}");
-                            polygonData[s].PartsCorrestion[firstJoint] = result;
+                            //print("{s}の{firstJoint}:{result}");
+                            polygonData[s].PartsCorrection[firstJoint] = result;
                         }
                     }
                 if (handMade && notFoundIndexes.Count > 0) {
@@ -392,8 +392,8 @@ namespace EnvironmentMaker {
                             Vector3 endPosition = polygonData[end + 1].PartsPosition(firstJoint);
                             Vector3 move = (endPosition - startPosition) / (end - start);
                             for (int k = start + 1; k <= end; k++) {
-                                print($"{k}の{firstJoint}を補間");
-                                polygonData[k].PartsCorrestion[firstJoint] = startPosition + move * (k - start) - polygonData[k].PartsPosition(firstJoint);
+                                //print($"{k}の{firstJoint}を補間");
+                                polygonData[k].PartsCorrection[firstJoint] = startPosition + move * (k - start) - polygonData[k].PartsPosition(firstJoint);
                             }
                         } catch (Exception e) {
                             print(e.Message);
@@ -418,9 +418,9 @@ namespace EnvironmentMaker {
         }
 
         void LoadModels(string dir) {
-            string baseDir = $@"polygons\{dir}";
+            string baseDir = @"polygons\" + dir;
             int num = 0;
-            while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
+            while (File.Exists(baseDir + @"\model_" + num + "_0.ply")) {
                 num++;
             }
             FrameAmount = num;
@@ -430,7 +430,7 @@ namespace EnvironmentMaker {
                 var pointlist = new List<Point>[kinectNums];
                 for (int i = 0; i < kinectNums; i++) {
                     var plist = new List<Point>();
-                    var fileName = $@"{baseDir}\model_{n}_{i}.ply";
+                    var fileName = baseDir + @"\model_" + n + "_" + i + ".ply";
                     foreach (var p in reader.Load(fileName)) {
                         plist.Add(p);
                     }
@@ -440,12 +440,12 @@ namespace EnvironmentMaker {
                         for (int j = 0; j < i; j++) {
                             pointlist[j].ForEach(p => source.Add(p));
                         }
-                        var sourceBorder = BorderPoints(source);
-                        var destBorder = BorderPoints(plist);
+                        var sourceBorder = PolygonData.BorderPoints(source);
+                        var destBorder = PolygonData.BorderPoints(plist);
                         //yield return n;
                         //var sourceLine = CalcLine(SelectPoint(plist, source));
                         //var destLine = CalcLine(SelectPoint(source, plist));
-                        float diffY = (float)CalcY(sourceBorder, destBorder);
+                        float diffY = (float)PolygonData.CalcY(sourceBorder, destBorder);
                         //yield return n;
                         //var diffXZ = CalcXZ(sourceLine, destLine);
                         if (diffY < 0.2) {
@@ -494,7 +494,7 @@ namespace EnvironmentMaker {
 
         void LoadIndexCSV(string dir) {
             List<string[]> data = new List<string[]>();
-            using (StreamReader reader = new StreamReader($@"polygons\{dir}\index.csv")) {
+            using (StreamReader reader = new StreamReader(@"polygons\" + dir + @"\index.csv")) {
                 string str = reader.ReadLine();
                 while (str != null) {
                     var split = str.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
@@ -513,7 +513,7 @@ namespace EnvironmentMaker {
         }
 
         void LoadBodyDump(string dir) {
-            string filePath = $@"polygons\{dir}\SelectedUserBody.dump";
+            string filePath = @"polygons\" + dir + @"\SelectedUserBody.dump";
             var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
             var list = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
             if (list.Count < FrameAmount) {
@@ -543,7 +543,7 @@ namespace EnvironmentMaker {
         }
 
         void LoadBody(string dir) {
-            using (StreamReader reader = new StreamReader($@"polygons\{dir}\bodyposes.txt")) {
+            using (StreamReader reader = new StreamReader(@"polygons\" + dir + @"\bodyposes.txt")) {
                 string str = reader.ReadLine();
                 while (str != null) {
                     var split = str.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
@@ -555,55 +555,6 @@ namespace EnvironmentMaker {
                     str = reader.ReadLine();
                 }
             }
-        }
-
-        List<List<Point>> BorderPoints(List<Point> points) {
-            var dictionary = new List<KeyValuePair<double, List<Point>>>();
-            var border = new List<List<Point>>();
-            var tmp = new List<Point>();
-            foreach (var v in points) {
-                tmp.Add(v);
-            }
-            tmp.Sort((t1, t2) => Math.Sign(t1.Y - t2.Y));
-            while (tmp.Count > 0) {
-                var v = tmp[0];
-                var near = tmp.TakeWhile(t => Math.Abs(t.Y - v.Y) < 20).ToList();
-                foreach (var n in near) {
-                    tmp.Remove(n);
-                }
-                near.Sort((n1, n2) => Math.Sign(n1.GetVector3().sqrMagnitude - n2.GetVector3().sqrMagnitude));
-                if (near.Count > 1) {
-                    var lengthes = new List<double>();
-                    var tmp2 = new Point[near.Count];
-                    near.CopyTo(tmp2);
-                    var max = Math.Sqrt(near.Count);
-                    for (int i = 0; i < max && near.Count > 0; i++) {
-                        var first = near.First();
-                        var last = near.Last();
-                        near.Remove(first);
-                        near.Remove(last);
-                        lengthes.Add((first.GetColor() - last.GetColor()).SqrLength());
-                    }
-                    var median = lengthes.Median();
-                    dictionary.Add(new KeyValuePair<double, List<Point>>(median, tmp2.ToList()));
-                }
-            }
-            for (int i = 0; i < dictionary.Count; i++) {
-                var nears = dictionary[i].Value;
-                var distance = dictionary.Min(d => {
-                    if (d.Value == nears) {
-                        return double.MaxValue;
-                    } else {
-                        var col1 = Functions.AverageColor(d.Value.Select(s => s.GetColor()).ToList());
-                        var col2 = Functions.AverageColor(nears.Select(s => s.GetColor()).ToList());
-                        return Functions.SubColor(col1, col2).SqrLength();
-                    }
-                });
-                if (distance > 0.001) {
-                    border.Add(dictionary[i].Value);
-                }
-            }
-            return border;
         }
 
         List<Point> SelectPoint(List<Point> source, List<Point> dest) {
@@ -628,7 +579,7 @@ namespace EnvironmentMaker {
             points[3].ForEach(p => basepoints.Add(p));
             var averageVec = Functions.AverageVector(basepoints.Select(p => p.GetVector3()).ToList());
             for (int i = 0; i < points.Length; i++) {
-                var border = BorderPoints(points[i]);
+                var border = PolygonData.BorderPoints(points[i]);
                 var minIndex = border.IndexOfMin(s => Math.Abs(s.Average(v => v.Y)));
                 var min = border[minIndex];
                 var vec3s = min.Select(p => p.GetVector3());
@@ -669,22 +620,6 @@ namespace EnvironmentMaker {
             }
         }
 
-        double CalcY(List<List<Point>> source, List<List<Point>> destination) {
-            var diffs = new List<double>();
-            Func<List<Point>, List<Point>, double> f = (p1, p2) =>
-                (Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()) - Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
-                 + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
-            for (int i = 0; i < source.Count; i++) {
-                var spoints = source[i];
-                var index = destination.IndexOfMin(b => f(b, spoints));
-                var dpoints = destination[index];
-                var diff = Functions.AverageVector(dpoints.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(spoints.Select(s => s.GetVector3()).ToList());
-                diffs.Add(diff.y);
-            }
-
-            return diffs.Median();
-        }
-
         private void OnGUI() {
             GUI.TextArea(new Rect(0, 0, 100, 20), "選択中");
             GUI.TextArea(new Rect(0, 20, 100, 20), Enum.GetName(typeof(JointType), selectedType));
@@ -710,7 +645,7 @@ namespace EnvironmentMaker {
             var beforeDir = tmpDirName;
             GUI.TextArea(new Rect(100, 40, 100, 20), "モーション名");
             tmpDirName = GUI.TextArea(new Rect(100, 60, 100, 20), beforeDir);
-            if (beforeDir != tmpDirName && tmpDirName != "" && DirName != tmpDirName && Directory.Exists($@"polygons\{tmpDirName}")) {
+            if (beforeDir != tmpDirName && tmpDirName != "" && DirName != tmpDirName && Directory.Exists(@"polygons\" + tmpDirName)) {
                 SaveData();
                 DirName = tmpDirName;
                 LoadModels(DirName);

@@ -90,7 +90,7 @@ namespace EnvironmentMaker {
             return new Point(p.X - vec.x, p.Y - vec.y, p.Z - vec.z, p.Red, p.Green, p.Blue);
         }
 
-        public override string ToString() => $"Vector:({X}, {Y}, {Z}) Color:({Red}, {Green}, {Blue})";
+        public override string ToString() { return string.Format("Vector:({0}, {1}, {2}) Color:({3}, {4}, {5})", X, Y, Z, Red, Green, Blue); }
     }
 
     static class ListExtension {

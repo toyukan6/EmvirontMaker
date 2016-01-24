@@ -249,7 +249,39 @@ namespace EnvironmentMaker {
         /// <summary>
         /// 軌跡の録画モード
         /// </summary>
-        private bool recordMode = false;
+        private bool walkRecordMode = false;
+        /// <summary>
+        /// モーションの録画モード
+        /// </summary>
+        private bool motionRecordMode = false;
+        /// <summary>
+        /// 録画されたモーションの特徴量たち
+        /// </summary>
+        private List<Vector3> characterValues = new List<Vector3>();
+        /// <summary>
+        /// モーションで立てるやつ
+        /// </summary>
+        private string BillBoardName = "";
+        /// <summary>
+        /// 歩行軌跡
+        /// </summary>
+        List<Vector2> walkLocus = new List<Vector2>();
+        /// <summary>
+        /// 録画タイミング計測用
+        /// </summary>
+        int recordFrame = 0;
+        /// <summary>
+        /// モーションによる入力をチャタらないようにするための子 歩き録画版
+        /// </summary>
+        int switchCountW = 0;
+        /// <summary>
+        /// モーションによる入力をチャタらないようにするための子 検索版
+        /// </summary>
+        int switchCountS = 0;
+        /// <summary>
+        /// 状態を表す文字
+        /// </summary>
+        TextMesh PlayerState;
         #endregion
 
         private void Awake() {
@@ -289,6 +321,7 @@ namespace EnvironmentMaker {
             material.mainTexture = null;
             controller = this.GetComponentInParent<FirstPersonController>();
             PolygonManager = GameObject.FindObjectOfType<PolygonManager>();
+            PlayerState = GameObject.Find("PlayerState").GetComponent<TextMesh>();
         }
 
         private void Update() {
@@ -467,6 +500,7 @@ namespace EnvironmentMaker {
             ChangeSelectedObject(null);
             //CreateSpriteObject(position, Texture2DToSprite(result[0]));
             GameObject obj0 = CreateSpriteObject(position, Texture2DToSprite(result[0]));
+            obj0.transform.localEulerAngles = firstAngle;
             bool beforeFix = fixing;
             fixing = true;
             GameObject bill = CreateBillBoard(obj0);
@@ -602,7 +636,7 @@ namespace EnvironmentMaker {
             }
             for (int i = 0; i < result.Length; i++) {
                 result[i].Apply();
-                result[i].name = $"{texture.name}{i}";
+                result[i].name = texture.name + i;
             }
             areaExpansions[texture.name] = Tuple.Create(result, label);
             return result;
@@ -610,13 +644,13 @@ namespace EnvironmentMaker {
 
         private void CameraMove() {
             if (Input.GetKey(KeyCode.A)) {
-                mainCamera.transform.position += new Vector3(-0.1f, 0, 0);
+                mainCamera.transform.position += new Vector3(-0.1f * mainCamera.transform.position.y / 10, 0, 0);
             } else if (Input.GetKey(KeyCode.W)) {
-                mainCamera.transform.position += new Vector3(0, 0, 0.1f);
+                mainCamera.transform.position += new Vector3(0, 0, 0.1f * mainCamera.transform.position.y / 10);
             } else if (Input.GetKey(KeyCode.S)) {
-                mainCamera.transform.position += new Vector3(0, 0, -0.1f);
+                mainCamera.transform.position += new Vector3(0, 0, -0.1f * mainCamera.transform.position.y / 10);
             } else if (Input.GetKey(KeyCode.D)) {
-                mainCamera.transform.position += new Vector3(0.1f, 0, 0);
+                mainCamera.transform.position += new Vector3(0.1f * mainCamera.transform.position.y / 10, 0, 0);
             }
 
             if (Input.GetKey(KeyCode.J)) {
@@ -732,10 +766,16 @@ namespace EnvironmentMaker {
             //print(state);
             var pos = this.transform.position;
             Back.transform.position = pos;
-            if (Input.GetKeyDown(KeyCode.Space)) {
+            if (DealComm.GetHandFlag(HandFlags.LeftHandDown, HandFlags.RightHandMiddle)) {
+                switchCountW++;
+            } else {
+                switchCountW = Math.Max(switchCountW - 1, 0);
+            }
+            if (switchCountW > 10 || Input.GetKeyDown(KeyCode.Space)) {
+                switchCountW = 0;
                 WalkRecord();
             } 
-            if (recordMode) {
+            if (walkRecordMode) {
                 recordFrame++;
                 if (recordFrame % 60 == 0) {
                     Vector2 thisPos = new Vector2(this.transform.position.x, this.transform.position.z);
@@ -745,36 +785,57 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-            if (DealComm.MovingState == 1) {
-                var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(textures[6])));
-                undoAct = () => {
-                    Destroy(bill.gameObject);
-                };
+            if (DealComm.GetHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandDown)) {
+                switchCountS++;
+            } else {
+                switchCountS = Math.Max(switchCountS - 1, 0);
+            }
+            if (switchCountS > 10 || Input.GetKeyDown(KeyCode.KeypadEnter)) {
+                switchCountS = 0;
+                MotionRecord();
+            }
+            if (motionRecordMode && DealComm.bodyHistoryList.Count > 0) {
+                var data = DealComm.bodyHistoryList.Last();
+                double x = data["WristRight"]["X"] - data["WristLeft"]["X"];
+                double y = data["WristRight"]["Y"] - data["WristLeft"]["Y"];
+                double z = data["WristRight"]["Z"] - data["WristLeft"]["Z"];
+                characterValues.Add(new Vector3((float)x, (float)y, (float)z));
+            }
+            if (DealComm.GetHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandMiddle)) {
+                var texture = textures.Find(t => t.name == BillBoardName);
+                if (texture != null) {
+                    var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(texture)));
+                    undoAct = () => {
+                        Destroy(bill.gameObject);
+                    };
+                }
+            }
+
+            if (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandUp)) {
+                Undo();
             }
         }
 
-        private string SearchMotionData(List<Vector3>[] points) {
+        private string SearchMotionData(List<Vector3> points) {
             var dictionary = new Dictionary<string, int>();
-            foreach (var d in PolygonManager.Histgrams) {
+            foreach (var d in PolygonManager.Data) {
                 dictionary[d.Key] = 0;
-                for (int i = 0; i < points.Length; i++) {
+                var result = new List<int>();
+                for (int i = 0; i < points.Count; i++) {
                     double minLength = int.MaxValue;
                     int minIndex = -1;
-                    double[] histgram = PolygonData.Histogram(PolygonData.Magnitudes(points[i]));
                     for (int j = 0; j < d.Value.Length; j++) {
-                        double length = 0;
-                        for (int k = 0; k < histgram.Length; k++) {
-                            length += Math.Abs(histgram[k] - d.Value[j][k]);
-                        }
+                        double length = (points[i] - d.Value[j].GetCharacterValue()).sqrMagnitude;
                         if (length < minLength) {
                             minLength = length;
                             minIndex = j;
                         }
                     }
-                    dictionary[d.Key] += Math.Abs(i - minIndex);
+                    result.Add(minIndex);
                 }
+                dictionary[d.Key] = Functions.LISLength(result.ToArray());
             }
-            int min = dictionary.Values.Min();
+            int min = dictionary.Values.Max();
             return dictionary.First(d => d.Value == min).Key;
         }
 
@@ -786,18 +847,29 @@ namespace EnvironmentMaker {
             return basePos + diff;
         }
 
-        List<Vector2> walkLocus = new List<Vector2>();
-        int recordFrame = 0;
-
         private void WalkRecord() {
-            recordMode = !recordMode;
-            if (recordMode) {
+            walkRecordMode = !walkRecordMode;
+            if (walkRecordMode) {
                 recordFrame = 0;
                 walkLocus.Clear();
                 walkStart = new Vector2(this.transform.position.x, this.transform.position.z);
                 walkLocus.Add(walkStart);
+                PlayerState.text = "歩いてね";
             } else {
                 SetPointCloud("walk", walkLocus);
+                PlayerState.text = "";
+            }
+        }
+
+        private void MotionRecord() {
+            motionRecordMode = !motionRecordMode;
+            if (motionRecordMode) {
+                characterValues.Clear();
+                PlayerState.text = "動いてね";
+            } else {
+                string str = SearchMotionData(characterValues);
+                SetPointCloud(str, new List<Vector2>());
+                PlayerState.text = "";
             }
         }
 
@@ -837,6 +909,7 @@ namespace EnvironmentMaker {
         private void SaveData() {
             var objects = GameObject.FindGameObjectsWithTag("Objects");
             var pcs = GameObject.FindGameObjectsWithTag("PointCloud");
+            updowns.RemoveAll(r => r.Exists(o => o == null));
             using (var writer = new FileStream(saveFileName, FileMode.OpenOrCreate)) {
                 using (var bwriter = new BinaryWriter(writer)) {
                     var brenderer = Back.GetComponent<MeshRenderer>();
@@ -948,7 +1021,8 @@ namespace EnvironmentMaker {
                         if (!groundTextureIsNull) {
                             string tname = breader.ReadString();
                             Texture2D targetexture = textures.Find(t => t.name == tname);
-                            SetGround(Texture2DToSprite(targetexture));
+                            var destroy = SetGround(Texture2DToSprite(targetexture));
+                            Destroy(destroy.gameObject);
                         }
                         int objectNumber = breader.ReadInt32();
                         for (int i = 0; i < objectNumber; i++) {
@@ -969,9 +1043,12 @@ namespace EnvironmentMaker {
                             if (angleX != 90) {
                                 obj = CreateBillBoard(obj);
                             }
+                            int layer = breader.ReadInt32();
+                            obj.layer = layer;
                             obj.GetComponent<BillBoard>().enabled = breader.ReadBoolean();
                             int layerID = breader.ReadInt32();
-                            obj.GetComponent<SpriteRenderer>().sortingLayerID = layerID;
+                            var srenderer = obj.GetComponent<SpriteRenderer>();
+                            srenderer.sortingLayerID = layerID;
                             var isNull = breader.ReadBoolean();
                             if (!isNull) {
                                 var box = obj.AddComponent<BoxCollider>();
@@ -1111,13 +1188,13 @@ namespace EnvironmentMaker {
             if (!int.TryParse(layerStr, out layer)) {
                 errMessage += "自然数を入力してください:layer";
             } else if (layer < 0 || layer >= Functions.SortingLayerUniqueIDs.Length) {
-                errMessage += $"レイヤーは{Functions.SortingLayerUniqueIDs.Length}までにしてください";
+                errMessage += "レイヤーは" + Functions.SortingLayerUniqueIDs.Length + "までにしてください";
             }
             var motion = GUI.Button(new Rect(200, 500, 100, 50), "モーションを\n置く");
             GUI.TextField(new Rect(300, 500, 100, 20), "モーション名");
             motionName = GUI.TextField(new Rect(300, 520, 100, 80), motionName);
             if (motion) {
-                if (Directory.Exists($"polygons/{motionName}")) {
+                if (Directory.Exists("polygons/" + motionName)) {
                     List<Vector2> positions = range.Select(r => r.position).ToList();
                     Vector2? start = null, end = null;
                     if (positions.Count > 0) {
@@ -1144,7 +1221,10 @@ namespace EnvironmentMaker {
             if (before != degreeStr) {
                 if (double.TryParse(degreeStr, out degree)) {
                     var csrender = Cursor.GetComponent<SpriteRenderer>();
-                    var angle = csrender?.transform.localEulerAngles;
+                    Vector3? angle = null;
+                    if (csrender != null) {
+                        angle = csrender.transform.localEulerAngles;
+                    }
                     if (angle.HasValue) {
                         csrender.transform.localEulerAngles = new Vector3(angle.Value.x, (float)degree, angle.Value.z);
                     }
@@ -1215,7 +1295,7 @@ namespace EnvironmentMaker {
             Back.gameObject.SetActive(true);
         }
 
-        private void SetGround(Sprite sprite) {
+        private GameObject SetGround(Sprite sprite) {
             var meshRenderer = baseGround.GetComponent<MeshRenderer>();
             meshRenderer.enabled = false;
             Material material = meshRenderer.sharedMaterial;
@@ -1240,6 +1320,7 @@ namespace EnvironmentMaker {
             float x = 3.65f * Math.Max(2750f / texture.width, 11470f / texture.height);
             obj.transform.localScale = new Vector3(x, x, 1);
             obj.GetComponent<SpriteRenderer>().sortingLayerID = Functions.SortingLayerUniqueIDs[layer];
+            return obj;
         }
 
         private IEnumerator<GameObject> CreateRiver() {
@@ -1274,7 +1355,7 @@ namespace EnvironmentMaker {
                         var clone = Instantiate(r, r.transform.position + offset, Quaternion.identity) as GameObject;
                         clone.name = r.name;
                         clone.transform.localEulerAngles = r.transform.localEulerAngles;
-                        updownlist.Add(r);
+                        updownlist.Add(clone);
                         objects.Add(clone);
                     }
                     updowns.Add(updownlist);
@@ -1324,7 +1405,7 @@ namespace EnvironmentMaker {
                         float rand = (float)Functions.GetRandomDouble();
                         var pos = start.position + diff * rand;
                         var index = indexes[Functions.GetRandomInt(indexes.Count)];
-                        var obj = CreateSpriteObject(pos, Texture2DToSprite(textures[index]));
+                        var obj = CreateSpriteObject(new Vector3(pos.x, 0, pos.y), Texture2DToSprite(textures[index]));
                         var result = CreateBillBoard(obj);
                         list.Add(result);
                         yield return result;
@@ -1363,7 +1444,12 @@ namespace EnvironmentMaker {
         }
 
         private void WalkModeGUI() {
-
+            BillBoardName = GUI.TextArea(new Rect(100, 0, 100, 100), BillBoardName);
+            //var values = Enum.GetNames(typeof(HandFlags));
+            //for (int i = 0; i < values.Length; i++) {
+            //    var type = (HandFlags)Enum.Parse(typeof(HandFlags), values[i]);
+            //    GUI.TextArea(new Rect(100 + 100 * i, Screen.height / 2, 100, 100), DealComm.GetHandFlag(type).ToString());
+            //}
         }
 
         private bool BetweenScreenPos(Rect area) {

@@ -126,9 +126,9 @@ namespace EnvironmentMaker {
         }
 
         IEnumerator<int> LoadModels(string dir) {
-            string baseDir = $@"polygons\{dir}";
+            string baseDir = @"polygons\" + dir;
             int num = 0;
-            while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
+            while (File.Exists(baseDir + @"\model_" + num + "_0.ply")) {
                 num++;
             }
             var tmpPoints = new Vector3[num][][];
@@ -142,7 +142,7 @@ namespace EnvironmentMaker {
                 var list = new List<Point>();
                 for (int i = 0; i < kinectNums; i++) {
                     var plist = new List<Point>();
-                    var fileName = $@"{baseDir}\model_{n}_{i}.ply";
+                    var fileName = baseDir + @"\model_" + n + "_" + i + ".ply";
                     foreach (var p in reader.Load(fileName)) {
                         plist.Add(p);
                     }
@@ -203,7 +203,7 @@ namespace EnvironmentMaker {
 
         void LoadIndexCSV(string dir) {
             List<string[]> data = new List<string[]>();
-            using (StreamReader reader = new StreamReader($@"polygons\{dir}\index.csv")) {
+            using (StreamReader reader = new StreamReader(@"polygons\" + dir + @"\index.csv")) {
                 string str = reader.ReadLine();
                 while (str != null) {
                     var split = str.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
@@ -263,7 +263,7 @@ namespace EnvironmentMaker {
         }
 
         void LoadBody(string dir) {
-            using (StreamReader reader = new StreamReader($@"polygons\{dir}\bodyposes.txt")) {
+            using (StreamReader reader = new StreamReader(@"polygons\" + dir + @"\bodyposes.txt")) {
                 string str = reader.ReadLine();
                 while (str != null) {
                     var split = str.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);

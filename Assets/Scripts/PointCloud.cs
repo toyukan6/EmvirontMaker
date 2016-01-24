@@ -229,7 +229,7 @@ namespace EnvironmentMaker {
             this.transform.position = firstPosition;
             beforeMag = double.MaxValue;
             nextRouteIndex = 1;
-            if (route.Count > 0) {
+            if (route.Count > 1) {
                 var next = route[nextRouteIndex];
                 SetTarget(next);
             }
@@ -261,7 +261,7 @@ namespace EnvironmentMaker {
 
         void LoadIndexCSV(string dir) {
             List<string[]> data = new List<string[]>();
-            using (StreamReader reader = new StreamReader($@"polygons\{dir}\index.csv")) {
+            using (StreamReader reader = new StreamReader(string.Format(@"polygons\{0}\index.csv", dir))) {
                 string str = reader.ReadLine();
                 while(str != null) {
                     var split = str.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
@@ -297,12 +297,12 @@ namespace EnvironmentMaker {
         }
 
         void LoadModels(string dir) {
-            string baseDir = $@"polygons\{dir}";
+            string baseDir = @"polygons\" + dir;
             int num = 0;
-            while (File.Exists($@"{baseDir}\model_{num}_0.ply")) {
+            while (File.Exists(baseDir + @"\model_" + num + "_0.ply")) {
                 num++;
             }
-            while (File.Exists($@"{baseDir}\model_0_{kinectNums - 1}.ply")) {
+            while (File.Exists(baseDir + @"\model_0_" + (kinectNums - 1) + ".ply")) {
                 kinectNums++;
             }
             kinectNums -= 1;
@@ -313,11 +313,20 @@ namespace EnvironmentMaker {
                 var pointlist = new List<Point>[kinectNums];
                 for (int i = 0; i < kinectNums; i++) {
                     var plist = new List<Point>();
-                    var fileName = $@"{baseDir}\model_{n}_{i}.ply";
+                    var fileName = baseDir + @"\model_" + n + "_" + i + ".ply";
                     foreach (var p in reader.Load(fileName)) {
                         plist.Add(p);
                     }
                     //yield return n;
+                    if (i > 0) {
+                        var source = PolygonData.BorderPoints(pointlist[0]);
+                        var dest = PolygonData.BorderPoints(plist);
+                        var diffY = PolygonData.CalcY(source, dest);
+                        if (diffY < 0.2) {
+                            pointlist[0] = pointlist[0].Select(p => p + new Vector3(0, (float)diffY, 0)).ToList();
+                            //plist = plist.Select(p => p - new Vector3(0, (float)diffY, 0)).ToList();
+                        }
+                    }
                     pointlist[i] = plist;
                     //yield return n;
                 }
@@ -332,6 +341,7 @@ namespace EnvironmentMaker {
                 polygonData[i].EstimateHip(standard);
             }
             Vector3 center = Functions.AverageVector(polygonData[0].Complete.Select(p => p.GetVector3()).ToList());
+            center.y *= -1;
             foreach (var pd in polygonData) {
                 for (int i = 0; i < pd.Positions.Length; i++) {
                     for (int j = 0; j < pd.Positions[i].Length; j++) {
@@ -344,28 +354,12 @@ namespace EnvironmentMaker {
         }
 
         void LoadBodyDump(string dir) {
-            string filePath = $@"polygons\{dir}\SelectedUserBody.dump";
+            string filePath = @"polygons\" + dir + @"\SelectedUserBody.dump";
             var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
             var list = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
             for (int i = 0; i < list.Count; i++) {
                 polygonData[i].SetBodyDump(list[i]);
             }
-        }
-
-        double CalcY(List<List<Point>> source, List<List<Point>> destination) {
-            var diffs = new List<double>();
-            Func<List<Point>, List<Point>, double> f = (p1, p2) =>
-                (Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()) - Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
-                 + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
-            for (int i = 0; i < source.Count; i++) {
-                var spoints = source[i];
-                var index = destination.IndexOfMin(b => f(b, spoints));
-                var dpoints = destination[index];
-                var diff = Functions.AverageVector(dpoints.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(spoints.Select(s => s.GetVector3()).ToList());
-                diffs.Add(diff.y);
-            }
-
-            return diffs.Median();
         }
 
         MyTime ParseTime(string str) {

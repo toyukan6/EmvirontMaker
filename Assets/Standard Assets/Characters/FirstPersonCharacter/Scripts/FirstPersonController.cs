@@ -168,7 +168,7 @@ namespace UnityStandardAssets.Characters.FirstPerson {
 
         private void GetInput(out float speed) {
             // Read input
-            float vertical = CrossPlatformInputManager.GetAxis("Vertical");
+            float vertical = (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandDown) ? 1 : 0);
 
             bool waswalking = m_IsWalking;
 
@@ -196,7 +196,7 @@ namespace UnityStandardAssets.Characters.FirstPerson {
 
 
         private void RotateView() {
-            float horizontal = CrossPlatformInputManager.GetAxis("Horizontal");
+            float horizontal = DealComm.GetHandFlag(HandFlags.RightHandUp, HandFlags.LeftHandDown) ? 1 : 0;
             int delta = 1;
             if (horizontal > 0) m_Target += delta;
             else if (horizontal < 0) m_Target -= delta;

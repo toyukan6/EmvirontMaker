@@ -8,10 +8,13 @@ using UnityEngine;
 namespace EnvironmentMaker {
     class PolygonManager : MonoBehaviour {
         public static PolygonManager Instance { get; private set; }
-        public Dictionary<string, PolygonData[]> Data { get; private set; } = new Dictionary<string, PolygonData[]>();
-        public Dictionary<string, double[][]> Histgrams { get; private set; } = new Dictionary<string, double[][]>();
+        public Dictionary<string, PolygonData[]> Data { get; private set; }
+        public Dictionary<string, Vector3[]> CharacterValues { get; private set; }
+        public Dictionary<string, double[][]> Histgrams { get; private set; }
         static string extensions = ".pldt";
         static string histgramsDataName = "motion.dat";
+        static string characterValueName = "charavalue.dat";
+        PlyReader reader = new PlyReader();
 
         private void Awake() {
             if (Instance != null) {
@@ -19,11 +22,14 @@ namespace EnvironmentMaker {
             } else {
                 Instance = this;
                 DontDestroyOnLoad(this.gameObject);
+                Data = new Dictionary<string, PolygonData[]>();
+                Histgrams = new Dictionary<string, double[][]>();
+                CharacterValues = new Dictionary<string, Vector3[]>();
             }
         }
 
         private void Start() {
-            LoadHistgrams();
+            LoadCharacters();
         }
 
         public void SetData(string name, PolygonData[] data) {
@@ -33,7 +39,7 @@ namespace EnvironmentMaker {
 
         public static void Save() {
             foreach (var d in Instance.Data) {
-                using (var stream = new FileStream($"{d.Key}{extensions}", FileMode.OpenOrCreate)) {
+                using (var stream = new FileStream(d.Key + extensions, FileMode.OpenOrCreate)) {
                     using (var bwriter = new BinaryWriter(stream)) {
                         bwriter.Write(d.Key);
                         bwriter.Write(d.Value.Length);
@@ -47,7 +53,7 @@ namespace EnvironmentMaker {
         }
 
         public static void Load(string key) {
-            string file = $"{key}{extensions}";
+            string file = key + extensions;
             if (File.Exists(file)) {
                 using (var stream = new FileStream(file, FileMode.Open)) {
                     using (var breader = new BinaryReader(stream)) {
@@ -97,6 +103,28 @@ namespace EnvironmentMaker {
                                 }
                             }
                             Instance.Histgrams[key] = histgram;
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void LoadCharacters() {
+            if (File.Exists(characterValueName)) {
+                using (var stream = new FileStream(characterValueName, FileMode.Open)) {
+                    using (var breader = new BinaryReader(stream)) {
+                        int count = breader.ReadInt32();
+                        for (int i = 0; i < count; i++) {
+                            string key = breader.ReadString();
+                            int length = breader.ReadInt32();
+                            var vectors = new List<Vector3>();
+                            for (int j = 0; j < length; j++) {
+                                double x = breader.ReadDouble();
+                                double y = breader.ReadDouble();
+                                double z = breader.ReadDouble();
+                                vectors.Add(new Vector3((float)x, (float)y, (float)z));
+                            }
+                            Instance.CharacterValues[key] = vectors.ToArray();
                         }
                     }
                 }

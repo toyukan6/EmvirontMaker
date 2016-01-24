@@ -18,11 +18,13 @@ namespace EnvironmentMaker {
         public Voxel<List<Point>> AnotherVoxel { get; private set; }
         const int SECTIONNUMBER = 64;
         public Dictionary<JointType, Vector3> Offsets { get; private set; }
-        public Dictionary<JointType, Vector3> PartsCorrestion { get; private set; }
+        public Dictionary<JointType, Vector3> PartsCorrection { get; private set; }
         public List<Point>[] Points;
         public Vector3 Estimate { get; private set; }
         public string Name { get; private set; }
         public Dictionary<JointType, Vector3> BodyList { get; private set; }
+        Vector3? characterValue = null;
+
         public PolygonData(string name, List<Point>[] points, bool simple = false) {
             Name = name;
             this.Points = points;
@@ -37,10 +39,10 @@ namespace EnvironmentMaker {
                 Merge = Merge.Concat(ReducePoints(points[i])).ToList();
             }
             Offsets = new Dictionary<JointType, Vector3>();
-            PartsCorrestion = new Dictionary<JointType, Vector3>();
+            PartsCorrection = new Dictionary<JointType, Vector3>();
             foreach (JointType type in Enum.GetValues(typeof(JointType))) {
                 Offsets[type] = Vector3.zero;
-                PartsCorrestion[type] = Vector3.zero;
+                PartsCorrection[type] = Vector3.zero;
             }
             if (!simple) {
                 PointToVoxel(Complete);
@@ -60,7 +62,7 @@ namespace EnvironmentMaker {
             return standard;
         }
 
-        List<List<Point>> BorderPoints(List<Point> points) {
+        public static List<List<Point>> BorderPoints(List<Point> points) {
             var dictionary = new List<KeyValuePair<double, List<Point>>>();
             var border = new List<List<Point>>();
             var tmp = new List<Point>();
@@ -74,7 +76,7 @@ namespace EnvironmentMaker {
                 foreach (var n in near) {
                     tmp.Remove(n);
                 }
-                near.Sort((n1, n2) => Math.Sign(n1.GetVector3().sqrMagnitude - n2.GetVector3().sqrMagnitude));
+                //near.Sort((n1, n2) => Math.Sign(n1.GetVector3().sqrMagnitude - n2.GetVector3().sqrMagnitude));
                 if (near.Count > 1) {
                     var lengthes = new List<double>();
                     var tmp2 = new Point[near.Count];
@@ -99,7 +101,7 @@ namespace EnvironmentMaker {
                     } else {
                         var col1 = Functions.AverageColor(d.Value.Select(s => s.GetColor()).ToList());
                         var col2 = Functions.AverageColor(nears.Select(s => s.GetColor()).ToList());
-                        return Functions.SubColor(col1, col2).SqrLength();
+                        return (col1 - col2).SqrLength();
                     }
                 });
                 if (distance > 0.001) {
@@ -107,6 +109,22 @@ namespace EnvironmentMaker {
                 }
             }
             return border;
+        }
+
+        public static double CalcY(List<List<Point>> source, List<List<Point>> destination) {
+            var diffs = new List<double>();
+            Func<List<Point>, List<Point>, double> f = (p1, p2) =>
+                (Functions.AverageColor(p1.Select(s => s.GetColor()).ToList()) - Functions.AverageColor(p2.Select(s => s.GetColor()).ToList())).SqrLength()
+                 + (Functions.AverageVector(p1.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(p2.Select(s => s.GetVector3()).ToList())).sqrMagnitude;
+            for (int i = 0; i < source.Count; i++) {
+                var spoints = source[i];
+                var index = destination.IndexOfMin(b => f(b, spoints));
+                var dpoints = destination[index];
+                var diff = Functions.AverageVector(dpoints.Select(s => s.GetVector3()).ToList()) - Functions.AverageVector(spoints.Select(s => s.GetVector3()).ToList());
+                diffs.Add(diff.y);
+            }
+
+            return diffs.Median();
         }
 
         public void EstimateHip(List<Point> standard) {
@@ -131,15 +149,22 @@ namespace EnvironmentMaker {
         }
 
         public Vector3 PartsPosition(JointType type) {
-            try {
+            if (BodyList.ContainsKey(type)) {
                 var diff = BodyList[type] - BodyList[JointType.SpineBase];
-                var basePos = Estimate + diff + Offsets[type] + PartsCorrestion[type];
+                var basePos = Estimate + diff + Offsets[type] + PartsCorrection[type];
                 return basePos;
-            } catch (KeyNotFoundException e) {
+            } else {
                 BodyList[type] = Vector3.zero;
-                string s = e.Message;
                 return Vector3.zero;
             }
+        }
+
+        public Vector3 GetCharacterValue() {
+            if (!characterValue.HasValue) {
+                Func<JointType, Vector3> func = (type) => BodyList[type] + Offsets[type] + PartsCorrection[type];
+                characterValue = func(JointType.WristRight) - func(JointType.WristLeft);
+            }
+            return characterValue.Value;
         }
 
         public double[] GetVoxelHistgram(Vector3 index) {
@@ -350,8 +375,8 @@ namespace EnvironmentMaker {
                 bwriter.Write(o.Value.y);
                 bwriter.Write(o.Value.z);
             }
-            bwriter.Write(PartsCorrestion.Count);
-            foreach (var pc in PartsCorrestion) {
+            bwriter.Write(PartsCorrection.Count);
+            foreach (var pc in PartsCorrection) {
                 bwriter.Write((int)pc.Key);
                 bwriter.Write(pc.Value.x);
                 bwriter.Write(pc.Value.y);
@@ -374,7 +399,7 @@ namespace EnvironmentMaker {
                 float x = breader.ReadSingle();
                 float y = breader.ReadSingle();
                 float z = breader.ReadSingle();
-                PartsCorrestion[type] = new Vector3(x, y, z);
+                PartsCorrection[type] = new Vector3(x, y, z);
             }
         }
     }

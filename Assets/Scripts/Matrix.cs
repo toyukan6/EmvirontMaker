@@ -8,8 +8,8 @@ namespace EnvironmentMaker {
     class Matrix {
         private double[,] matrix;
 
-        public int Width => matrix.GetLength(1);
-        public int Height => matrix.GetLength(0);
+        public int Width { get { return matrix.GetLength(1); } }
+        public int Height { get { return matrix.GetLength(0); } }
 
         private bool decomposited = false;
 
@@ -110,7 +110,7 @@ namespace EnvironmentMaker {
                 }
                 return cofactor;
             } else {
-                throw new NotImplementedException($"行列の範囲外です");
+                throw new NotImplementedException("行列の範囲外です");
             }
         }
 
