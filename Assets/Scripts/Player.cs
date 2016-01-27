@@ -270,18 +270,25 @@ namespace EnvironmentMaker {
         /// 録画タイミング計測用
         /// </summary>
         int recordFrame = 0;
-        /// <summary>
-        /// モーションによる入力をチャタらないようにするための子 歩き録画版
-        /// </summary>
-        int switchCountW = 0;
-        /// <summary>
-        /// モーションによる入力をチャタらないようにするための子 検索版
-        /// </summary>
-        int switchCountS = 0;
-        /// <summary>
         /// 状態を表す文字
         /// </summary>
         TextMesh PlayerState;
+        /// <summary>
+        /// ドーム用カメラ
+        /// </summary>
+        GameObject FishEyeCamera;
+        /// <summary>
+        /// ドーム用カメラの位置
+        /// </summary>
+        Vector3 cameraPos;
+        /// <summary>
+        /// 音を流す
+        /// </summary>
+        AudioSource audioSource;
+        /// <summary>
+        /// 川の音
+        /// </summary>
+        AudioClip river;
         #endregion
 
         private void Awake() {
@@ -292,28 +299,7 @@ namespace EnvironmentMaker {
             string path = "Textures";
             var files = Directory.GetFiles(path);
             foreach (var f in files) {
-                using (FileStream stream = new FileStream(f, FileMode.Open)) {
-                    using (BinaryReader reader = new BinaryReader(stream)) {
-                        long length = stream.Length;
-                        var bytes = new List<byte>();
-                        if (length > int.MaxValue) {
-                            long remain = length;
-                            while(remain > 0) {
-                                int readLength = (int)Math.Min(int.MaxValue, remain);
-                                foreach (var b in reader.ReadBytes(readLength)) {
-                                    bytes.Add(b);
-                                }
-                                remain -= int.MaxValue;
-                            }
-                        } else {
-                            bytes = reader.ReadBytes((int)length).ToList();
-                        }
-                        var tex = new Texture2D(2, 2);
-                        tex.LoadImage(bytes.ToArray());
-                        tex.name = Path.GetFileNameWithoutExtension(f);
-                        textures.Add(tex);
-                    }
-                }
+                textures.Add(LoadTexture(f));
             }
             int.TryParse(extensionStartStr, out extensionStart);
             int.TryParse(extensionThresholdStr, out extensionThreshold);
@@ -322,6 +308,9 @@ namespace EnvironmentMaker {
             controller = this.GetComponentInParent<FirstPersonController>();
             PolygonManager = GameObject.FindObjectOfType<PolygonManager>();
             PlayerState = GameObject.Find("PlayerState").GetComponent<TextMesh>();
+            FishEyeCamera = GameObject.Find("Fisheye view camera");
+            cameraPos = FishEyeCamera.transform.position;
+            audioSource = this.GetComponentInParent<AudioSource>();
         }
 
         private void Update() {
@@ -330,6 +319,7 @@ namespace EnvironmentMaker {
             } else {
                 WalkModeUpdate();
             }
+            FishEyeCamera.transform.position = cameraPos;
         }
 
         int waitFrame = 0;
@@ -500,10 +490,10 @@ namespace EnvironmentMaker {
             ChangeSelectedObject(null);
             //CreateSpriteObject(position, Texture2DToSprite(result[0]));
             GameObject obj0 = CreateSpriteObject(position, Texture2DToSprite(result[0]));
-            obj0.transform.localEulerAngles = firstAngle;
             bool beforeFix = fixing;
             fixing = true;
             GameObject bill = CreateBillBoard(obj0);
+            bill.transform.localEulerAngles = firstAngle;
             fixing = beforeFix;
             float theta = bill.transform.localEulerAngles.y + 90;
             theta = (float)(theta * Math.PI / 180);
@@ -766,13 +756,7 @@ namespace EnvironmentMaker {
             //print(state);
             var pos = this.transform.position;
             Back.transform.position = pos;
-            if (DealComm.GetHandFlag(HandFlags.LeftHandDown, HandFlags.RightHandMiddle)) {
-                switchCountW++;
-            } else {
-                switchCountW = Math.Max(switchCountW - 1, 0);
-            }
-            if (switchCountW > 10 || Input.GetKeyDown(KeyCode.Space)) {
-                switchCountW = 0;
+            if (DealComm.GetNewHandFlag(HandFlags.LeftHandDown, HandFlags.RightHandMiddle) || Input.GetKeyDown(KeyCode.Space)) {
                 WalkRecord();
             } 
             if (walkRecordMode) {
@@ -785,14 +769,11 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-            if (DealComm.GetHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandDown)) {
-                switchCountS++;
-            } else {
-                switchCountS = Math.Max(switchCountS - 1, 0);
-            }
-            if (switchCountS > 10 || Input.GetKeyDown(KeyCode.KeypadEnter)) {
-                switchCountS = 0;
+            if (DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandDown) || Input.GetKeyDown(KeyCode.KeypadEnter)) {
                 MotionRecord();
+            }
+            if (motionRecordMode && DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandUp)) {
+                AddMotion();
             }
             if (motionRecordMode && DealComm.bodyHistoryList.Count > 0) {
                 var data = DealComm.bodyHistoryList.Last();
@@ -801,7 +782,7 @@ namespace EnvironmentMaker {
                 double z = data["WristRight"]["Z"] - data["WristLeft"]["Z"];
                 characterValues.Add(new Vector3((float)x, (float)y, (float)z));
             }
-            if (DealComm.GetHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandMiddle)) {
+            if (DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandMiddle) || Input.GetKeyDown(KeyCode.N)) {
                 var texture = textures.Find(t => t.name == BillBoardName);
                 if (texture != null) {
                     var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(texture)));
@@ -811,7 +792,7 @@ namespace EnvironmentMaker {
                 }
             }
 
-            if (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandUp)) {
+            if (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandUp) || Input.GetKeyDown(KeyCode.U)) {
                 Undo();
             }
         }
@@ -858,6 +839,19 @@ namespace EnvironmentMaker {
             } else {
                 SetPointCloud("walk", walkLocus);
                 PlayerState.text = "";
+            }
+        }
+
+        private void AddMotion() {
+            motionRecordMode = false;
+            string str = SearchMotionData(characterValues);
+            var pcs = GameObject.FindObjectsOfType<PointCloud>();
+            if (pcs.Length == 0) {
+                SetPointCloud(str, new List<Vector2>());
+                PlayerState.text = "";
+            } else {
+                int minIndex = pcs.IndexOfMin(p => (p.transform.position - this.transform.position).sqrMagnitude);
+                pcs[minIndex].AddMotion(str);
             }
         }
 
@@ -1042,6 +1036,8 @@ namespace EnvironmentMaker {
                             obj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
                             if (angleX != 90) {
                                 obj = CreateBillBoard(obj);
+                                obj.transform.localEulerAngles = new Vector3(angleX, angleY, angleZ);
+                                obj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
                             }
                             int layer = breader.ReadInt32();
                             obj.layer = layer;
@@ -1081,11 +1077,14 @@ namespace EnvironmentMaker {
                                 obj.GetComponent<SpriteRenderer>().sortingLayerID = layerID;
                                 var isNull = breader.ReadBoolean();
                                 if (!isNull) {
+                                    failure = true;
                                     var box = obj.AddComponent<BoxCollider>();
                                     float sizeX = breader.ReadSingle();
                                     float sizeY = breader.ReadSingle();
                                     float sizeZ = breader.ReadSingle();
                                     box.size = new Vector3(sizeX, sizeY, sizeZ);
+                                } else {
+                                    failure = false;
                                 }
                                 List<GameObject> result = UpDownTexture(obj, d);
                                 updowns.Add(result);
@@ -1105,7 +1104,6 @@ namespace EnvironmentMaker {
         private void IntoEditMode() {
             mainCamera.enabled = true;
             firstPersonCamera.enabled = false;
-            undoAct = null;
             controller.enabled = false;
             if (Cursor == null) {
                 Cursor = Instantiate(SpritePrehab, Vector3.zero, Quaternion.Euler(90, 0, 0)) as GameObject;
@@ -1129,6 +1127,31 @@ namespace EnvironmentMaker {
             }
         }
 
+        private Texture2D LoadTexture(string path) {
+            using (FileStream stream = new FileStream(path, FileMode.Open)) {
+                using (BinaryReader reader = new BinaryReader(stream)) {
+                    long length = stream.Length;
+                    var bytes = new List<byte>();
+                    if (length > int.MaxValue) {
+                        long remain = length;
+                        while (remain > 0) {
+                            int readLength = (int)Math.Min(int.MaxValue, remain);
+                            foreach (var b in reader.ReadBytes(readLength)) {
+                                bytes.Add(b);
+                            }
+                            remain -= int.MaxValue;
+                        }
+                    } else {
+                        bytes = reader.ReadBytes((int)length).ToList();
+                    }
+                    var tex = new Texture2D(2, 2);
+                    tex.LoadImage(bytes.ToArray());
+                    tex.name = Path.GetFileNameWithoutExtension(path);
+                    return tex;
+                }
+            }
+        }
+
         private void EditModeGUI() {
             var srender = Cursor.GetComponent<SpriteRenderer>();
             showButton = GUI.Button(showRect, (showTextures ? "隠す" : "表示する"));
@@ -1136,6 +1159,15 @@ namespace EnvironmentMaker {
                 showTextures = !showTextures;
             }
             if (showTextures) {
+                string path = "Textures";
+                var files = Directory.GetFiles(path);
+                if (files.Length != textures.Count) {
+                    textures.Clear();
+                    showTextureOffset = 0;
+                    foreach (var f in files) {
+                        textures.Add(LoadTexture(f));
+                    }
+                }
                 if (showTextureOffset > 0)
                     leftButton = GUI.Button(leftRect, "←");
                 else
@@ -1325,7 +1357,7 @@ namespace EnvironmentMaker {
 
         private IEnumerator<GameObject> CreateRiver() {
             createRiver = false;
-            var texture = textures[4];
+            var texture = textures.Find(t => t.name == "river");
             var objects = new List<GameObject>();
             double beforeDegree = degree;
             var acts = new List<Action>();
@@ -1368,6 +1400,8 @@ namespace EnvironmentMaker {
                 objects.ForEach(o => Destroy(o.gameObject));
             };
             degree = beforeDegree;
+            audioSource.clip = river;
+            audioSource.Play();
         }
 
         private double GetAngle(Vector2 vec1, Vector2 vec2) {

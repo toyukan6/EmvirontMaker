@@ -19,6 +19,8 @@ public class DealComm : MonoBehaviour {
     public static double IsRaiseLH { get; private set; }
     public static int Degree { get; private set; }
     static HandFlags handFlag;
+    public static bool IsSpread { get; private set; }
+    static HandFlags beforeHandFlag;
 
     // Use this for initialization
     void Start() {
@@ -50,15 +52,14 @@ public class DealComm : MonoBehaviour {
             deg = tmpDirHistory[(int)Math.Floor(tmpDirHistory.Length / 2.0)];
             Degree = deg;
         }
+        beforeHandFlag = handFlag;
+        handFlag = 0;
         if (bodyHistoryList.Count > 10) {
-            handFlag = 0;
             var raiseLeftHands = new List<HandFlags>();
             for (int i = 0; i < bodyHistoryList.Count; i++) {
-                // 左手のY座標が左肩からどのぐらい離れているか取得
+                // 左手のY座標が左肩の上にあるか取得
                 try {
-                    if (Math.Abs(bodyHistoryList[i]["HandLeft"]["Y"] - bodyHistoryList[i]["ShoulderLeft"]["Y"]) < 0.1) {
-                        raiseLeftHands.Add(HandFlags.LeftHandMiddle);
-                    } else if (bodyHistoryList[i]["HandLeft"]["Y"] - bodyHistoryList[i]["ShoulderLeft"]["Y"] > 0) {
+                    if (bodyHistoryList[i]["HandLeft"]["Y"] - bodyHistoryList[i]["ShoulderLeft"]["Y"] > 0) {
                         raiseLeftHands.Add(HandFlags.LeftHandUp);
                     } else {
                         raiseLeftHands.Add(HandFlags.LeftHandDown);
@@ -71,21 +72,47 @@ public class DealComm : MonoBehaviour {
             var raiseRightHands = new List<HandFlags>();
             // 右腕の位置関係の把握
             for (int i = 0; i < bodyHistoryList.Count; i++) {
-                // 右手のY座標が右肩からどのぐらい離れているか取得
-                if (Math.Abs(bodyHistoryList[i]["HandRight"]["Y"] - bodyHistoryList[i]["ShoulderRight"]["Y"]) < 0.1) {
-                    raiseRightHands.Add(HandFlags.RightHandMiddle);
-                } else if (bodyHistoryList[i]["HandRight"]["Y"] - bodyHistoryList[i]["ShoulderRight"]["Y"] > 0) {
-                    raiseRightHands.Add(HandFlags.RightHandUp);
-                } else {
-                    raiseRightHands.Add(HandFlags.RightHandDown);
+                // 右手のY座標が右肩の上にあるか取得
+                try {
+                    if (bodyHistoryList[i]["HandRight"]["Y"] - bodyHistoryList[i]["ShoulderRight"]["Y"] > 0) {
+                        raiseRightHands.Add(HandFlags.RightHandUp);
+                    } else {
+                        raiseRightHands.Add(HandFlags.RightHandDown);
+                    }
+                } catch (KeyNotFoundException e) {
+                    print(e.Message);
                 }
             }
+            var spread = new List<bool>();
+            for (int i = 0; i < bodyHistoryList.Count; i++) {
+                //両手を広げているか取得
+                try {
+                    double x = bodyHistoryList[i]["HandRight"]["X"] - bodyHistoryList[i]["HandLeft"]["X"];
+                    double z = bodyHistoryList[i]["HandRight"]["Z"] - bodyHistoryList[i]["HandLeft"]["Z"];
+                    if (x * x + z * z > 1) {
+                        spread.Add(true);
+                    } else {
+                        spread.Add(false);
+                    }
+                } catch (KeyNotFoundException e) {
+                    print(e.Message);
+                }
+            }
+            IsSpread = spread.All(s => s);
             foreach (HandFlags flag in Enum.GetValues(typeof(HandFlags))) {
                 if (raiseLeftHands.All(r => r == flag) || raiseRightHands.All(r => r == flag)) {
                     handFlag |= flag;
                 }
             }
         }
+    }
+
+    public static bool GetNewHandFlag(HandFlags flag) {
+        return GetHandFlag(flag) && (beforeHandFlag & flag) != flag;
+    }
+
+    public static bool GetNewHandFlag(params HandFlags[] flag) {
+        return flag.All(f => GetNewHandFlag(f));
     }
 
     public static bool GetHandFlag(HandFlags flag) {

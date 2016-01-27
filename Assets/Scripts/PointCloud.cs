@@ -53,7 +53,7 @@ namespace EnvironmentMaker {
                 pointsNumbers[i] = 0;
             }
             frameAmount = polygonData.Length;
-            AddAccessories(JointType.WristRight, Instantiate(Pointer));
+            //AddAccessories(JointType.WristRight, Instantiate(Pointer));
             //foreach (JointType type in Enum.GetValues(typeof(JointType))) {
             //    var obj = Instantiate(Pointer) as GameObject;
             //    obj.name = Enum.GetName(typeof(JointType), type);
@@ -86,7 +86,7 @@ namespace EnvironmentMaker {
             if (start.HasValue) {
                 var value = start.Value;
                 this.transform.position = new Vector3(value.x, this.transform.position.y, value.y);
-                Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
+                //Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
                 if (end.HasValue) {
                     SetTarget(end.Value);
                 }
@@ -101,7 +101,7 @@ namespace EnvironmentMaker {
             double theta = Math.Atan2(-diff.y, diff.x) - Math.PI / 2;
             var angle = this.transform.localEulerAngles;
             this.transform.localEulerAngles = new Vector3(angle.x, (float)(theta * 180 / Math.PI), angle.z);
-            Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
+            //Instantiate(SelectedPrehab, new Vector3(end.Value.x, this.transform.position.y, end.Value.y), Quaternion.Euler(90, 0, 0));
         }
 
         double beforeMag = double.MaxValue;

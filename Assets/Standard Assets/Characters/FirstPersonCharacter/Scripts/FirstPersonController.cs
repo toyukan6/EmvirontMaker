@@ -88,6 +88,9 @@ namespace UnityStandardAssets.Characters.FirstPerson {
         private void FixedUpdate() {
             float speed;
             GetInput(out speed);
+            if (m_Input.magnitude > 0) {
+                int a = 0;
+            }
             // always move along the camera forward as it is the direction that it being aimed at
             Vector3 desiredMove = transform.forward * m_Input.y + transform.right * m_Input.x;
 
@@ -157,10 +160,10 @@ namespace UnityStandardAssets.Characters.FirstPerson {
                     m_HeadBob.DoHeadBob(m_CharacterController.velocity.magnitude +
                                       (speed * (m_IsWalking ? 1f : m_RunstepLenghten)));
                 newCameraPosition = m_Camera.transform.localPosition;
-                newCameraPosition.y = m_Camera.transform.localPosition.y - m_JumpBob.Offset();
+                //newCameraPosition.y = m_Camera.transform.localPosition.y - m_JumpBob.Offset();
             } else {
                 newCameraPosition = m_Camera.transform.localPosition;
-                newCameraPosition.y = m_OriginalCameraPosition.y - m_JumpBob.Offset();
+                //newCameraPosition.y = m_OriginalCameraPosition.y - m_JumpBob.Offset();
             }
             m_Camera.transform.localPosition = newCameraPosition;
         }
@@ -168,7 +171,14 @@ namespace UnityStandardAssets.Characters.FirstPerson {
 
         private void GetInput(out float speed) {
             // Read input
-            float vertical = (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandDown) ? 1 : 0);
+            float vertical;
+            if (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandDown)) {
+                vertical = 1;
+            } else if (DealComm.GetHandFlag(HandFlags.LeftHandDown, HandFlags.RightHandUp)) {
+                vertical = -1;
+            } else {
+                vertical = Input.GetAxis("Vertical");
+            }
 
             bool waswalking = m_IsWalking;
 
@@ -196,7 +206,12 @@ namespace UnityStandardAssets.Characters.FirstPerson {
 
 
         private void RotateView() {
-            float horizontal = DealComm.GetHandFlag(HandFlags.RightHandUp, HandFlags.LeftHandDown) ? 1 : 0;
+            float horizontal;
+            if (DealComm.GetHandFlag(HandFlags.RightHandUp, HandFlags.LeftHandDown)) {
+                horizontal = 1;
+            } else {
+                horizontal = Input.GetAxis("Horizontal");
+            }
             int delta = 1;
             if (horizontal > 0) m_Target += delta;
             else if (horizontal < 0) m_Target -= delta;
