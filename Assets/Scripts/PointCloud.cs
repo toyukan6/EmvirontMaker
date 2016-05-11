@@ -28,7 +28,10 @@ namespace EnvironmentMaker {
         private PolygonData[] polygonData;
         private int frameAmount;
         private bool loadEnd = false;
-        private Dictionary<JointType, List<GameObject>> Accessories = new Dictionary<JointType, List<GameObject>>();
+        private Dictionary<JointType, List<GameObject>> accessories = new Dictionary<JointType, List<GameObject>>();
+        private List<string> addMotions = new List<string>();
+        //public Dictionary<JointType, List<GameObject>> AllAccessories;
+        public GameObject Bag;
 
         private Mesh mesh;
 
@@ -53,7 +56,7 @@ namespace EnvironmentMaker {
                 pointsNumbers[i] = 0;
             }
             frameAmount = polygonData.Length;
-            //AddAccessories(JointType.WristRight, Instantiate(Pointer));
+            //AddAccessories(JointType.WristRight, Instantiate(Bag));
             //foreach (JointType type in Enum.GetValues(typeof(JointType))) {
             //    var obj = Instantiate(Pointer) as GameObject;
             //    obj.name = Enum.GetName(typeof(JointType), type);
@@ -86,6 +89,7 @@ namespace EnvironmentMaker {
             if (start.HasValue) {
                 var value = start.Value;
                 this.transform.position = new Vector3(value.x, this.transform.position.y, value.y);
+                firstPosition = this.transform.position;
                 //Instantiate(SelectedPrehab, this.transform.position, Quaternion.Euler(90, 0, 0));
                 if (end.HasValue) {
                     SetTarget(end.Value);
@@ -198,9 +202,10 @@ namespace EnvironmentMaker {
                     looped = false;
                 }
                 int accessIndex = pointsNumbers[0];
-                foreach (var accessory in Accessories) {
+                foreach (var accessory in accessories) {
                     var diff = polygonData[accessIndex].PartsPosition(accessory.Key) - polygonData[0].Estimate;
                     diff = diff.RotateXZ(-this.transform.eulerAngles.y * Math.PI / 180);
+                    diff.y += this.transform.position.y;
                     accessory.Value.ForEach(a => a.transform.position = this.transform.position + diff);
                 }
                 //var positions = new Vector3[pointers.Count];
@@ -236,10 +241,10 @@ namespace EnvironmentMaker {
         }
 
         public void AddAccessories(JointType type, GameObject accessory) {
-            if (!Accessories.ContainsKey(type)) {
-                Accessories[type] = new List<GameObject>();
+            if (!accessories.ContainsKey(type)) {
+                accessories[type] = new List<GameObject>();
             }
-            Accessories[type].Add(accessory);
+            accessories[type].Add(accessory);
         }
 
         public void AddMotion(string motionName) {
@@ -257,6 +262,7 @@ namespace EnvironmentMaker {
                 }
             }
             polygonData = before.Concat(polygonData).ToArray();
+            addMotions.Add(motionName);
         }
 
         void LoadIndexCSV(string dir) {
@@ -341,7 +347,7 @@ namespace EnvironmentMaker {
                 polygonData[i].EstimateHip(standard);
             }
             Vector3 center = Functions.AverageVector(polygonData[0].Complete.Select(p => p.GetVector3()).ToList());
-            center.y *= -1;
+            //center.y *= -1;
             foreach (var pd in polygonData) {
                 for (int i = 0; i < pd.Positions.Length; i++) {
                     for (int j = 0; j < pd.Positions[i].Length; j++) {
@@ -349,7 +355,7 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-            firstPosition = this.transform.position;
+            //firstPosition = this.transform.position;
             loadEnd = true;
         }
 
@@ -357,7 +363,17 @@ namespace EnvironmentMaker {
             string filePath = @"polygons\" + dir + @"\SelectedUserBody.dump";
             var bodyList = (List<Dictionary<int, float[]>>)Utility.LoadFromBinary(filePath);
             var list = bodyList.Select(bl => bl.ToDictionary(d => (JointType)d.Key, d => new Vector3(d.Value[0], d.Value[1], d.Value[2]))).ToList();
-            for (int i = 0; i < list.Count; i++) {
+            if (list.Count < polygonData.Length) {
+                var newData = new PolygonData[list.Count];
+                var newTimes = new List<MyTime[]>();
+                for (int i = 0; i < list.Count; i++) {
+                    newData[i] = polygonData[i];
+                    newTimes.Add(fileTimes[i]);
+                }
+                polygonData = newData;
+                fileTimes = newTimes;
+            }
+            for (int i = 0; i < Math.Min(list.Count, polygonData.Length); i++) {
                 polygonData[i].SetBodyDump(list[i]);
             }
         }
@@ -374,6 +390,10 @@ namespace EnvironmentMaker {
 
         public void Save(BinaryWriter writer) {
             writer.Write(DirName);
+            writer.Write(addMotions.Count);
+            foreach (var a in addMotions) {
+                writer.Write(a);
+            }
             writer.Write(route.Count);
             foreach (var r in route) {
                 writer.Write(r.x);
@@ -381,16 +401,22 @@ namespace EnvironmentMaker {
             }
         }
 
-        public static Tuple<string, List<Vector2>> Load(BinaryReader reader) {
+        public static Tuple<List<string>, List<Vector2>> Load(BinaryReader reader) {
             var route = new List<Vector2>();
+            var motions = new List<string>();
             string str = reader.ReadString();
+            motions.Add(str);
+            int motionCount = reader.ReadInt32();
+            for (int i = 0; i < motionCount; i++) {
+                motions.Add(reader.ReadString());
+            }
             int count = reader.ReadInt32();
             for (int i = 0; i < count; i++) {
                 float x = reader.ReadSingle();
                 float y = reader.ReadSingle();
                 route.Add(new Vector2(x, y));
             }
-            return Tuple.Create(str, route);
+            return Tuple.Create(motions, route);
         }
     }
 

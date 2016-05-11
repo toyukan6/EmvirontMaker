@@ -20,6 +20,11 @@ public class DealComm : MonoBehaviour {
     public static int Degree { get; private set; }
     static HandFlags handFlag;
     public static bool IsSpread { get; private set; }
+    public static bool NearBy { get; private set; }
+    public static bool BeforeIsSpread { get; private set; }
+    public static bool BeforeNearBy { get; private set; }
+    public static bool IsNewSpread { get { return IsSpread && !BeforeIsSpread; } }
+    public static bool NewNearBy { get; private set; }
     static HandFlags beforeHandFlag;
 
     // Use this for initialization
@@ -52,59 +57,71 @@ public class DealComm : MonoBehaviour {
             deg = tmpDirHistory[(int)Math.Floor(tmpDirHistory.Length / 2.0)];
             Degree = deg;
         }
+    }
+
+    private void UpdateFlag() {
         beforeHandFlag = handFlag;
         handFlag = 0;
-        if (bodyHistoryList.Count > 10) {
-            var raiseLeftHands = new List<HandFlags>();
-            for (int i = 0; i < bodyHistoryList.Count; i++) {
-                // 左手のY座標が左肩の上にあるか取得
-                try {
-                    if (bodyHistoryList[i]["HandLeft"]["Y"] - bodyHistoryList[i]["ShoulderLeft"]["Y"] > 0) {
-                        raiseLeftHands.Add(HandFlags.LeftHandUp);
-                    } else {
-                        raiseLeftHands.Add(HandFlags.LeftHandDown);
-                    }
-                } catch (NullReferenceException e) {
-                    print(e.Message);
+        var raiseLeftHands = new List<HandFlags>();
+        for (int i = 0; i < bodyHistoryList.Count; i++) {
+            // 左手のY座標が左肩の上にあるか取得
+            try {
+                if (bodyHistoryList[i]["HandLeft"]["Y"] - bodyHistoryList[i]["ShoulderLeft"]["Y"] > 0) {
+                    raiseLeftHands.Add(HandFlags.LeftHandUp);
+                } else {
+                    raiseLeftHands.Add(HandFlags.LeftHandDown);
                 }
-            }
-
-            var raiseRightHands = new List<HandFlags>();
-            // 右腕の位置関係の把握
-            for (int i = 0; i < bodyHistoryList.Count; i++) {
-                // 右手のY座標が右肩の上にあるか取得
-                try {
-                    if (bodyHistoryList[i]["HandRight"]["Y"] - bodyHistoryList[i]["ShoulderRight"]["Y"] > 0) {
-                        raiseRightHands.Add(HandFlags.RightHandUp);
-                    } else {
-                        raiseRightHands.Add(HandFlags.RightHandDown);
-                    }
-                } catch (KeyNotFoundException e) {
-                    print(e.Message);
-                }
-            }
-            var spread = new List<bool>();
-            for (int i = 0; i < bodyHistoryList.Count; i++) {
-                //両手を広げているか取得
-                try {
-                    double x = bodyHistoryList[i]["HandRight"]["X"] - bodyHistoryList[i]["HandLeft"]["X"];
-                    double z = bodyHistoryList[i]["HandRight"]["Z"] - bodyHistoryList[i]["HandLeft"]["Z"];
-                    if (x * x + z * z > 1) {
-                        spread.Add(true);
-                    } else {
-                        spread.Add(false);
-                    }
-                } catch (KeyNotFoundException e) {
-                    print(e.Message);
-                }
-            }
-            IsSpread = spread.All(s => s);
-            foreach (HandFlags flag in Enum.GetValues(typeof(HandFlags))) {
-                if (raiseLeftHands.All(r => r == flag) || raiseRightHands.All(r => r == flag)) {
-                    handFlag |= flag;
-                }
+            } catch (NullReferenceException e) {
+                print(e.Message);
             }
         }
+
+        var raiseRightHands = new List<HandFlags>();
+        // 右腕の位置関係の把握
+        for (int i = 0; i < bodyHistoryList.Count; i++) {
+            // 右手のY座標が右肩の上にあるか取得
+            try {
+                if (bodyHistoryList[i]["HandRight"]["Y"] - bodyHistoryList[i]["ShoulderRight"]["Y"] > 0) {
+                    raiseRightHands.Add(HandFlags.RightHandUp);
+                } else {
+                    raiseRightHands.Add(HandFlags.RightHandDown);
+                }
+            } catch (KeyNotFoundException e) {
+                print(e.Message);
+            }
+        }
+        var spread = new List<bool>();
+        var nearby = new List<bool>();
+        double threshold = 0.2;
+        for (int i = 0; i < bodyHistoryList.Count; i++) {
+            //両手を広げているか取得
+            try {
+                double x = bodyHistoryList[i]["HandRight"]["X"] - bodyHistoryList[i]["HandLeft"]["X"];
+                double z = bodyHistoryList[i]["HandRight"]["Z"] - bodyHistoryList[i]["HandLeft"]["Z"];
+                if (x * x + z * z > 1) {
+                    spread.Add(true);
+                } else {
+                    spread.Add(false);
+                }
+                if (x * x + z * z < threshold * threshold) {
+                    nearby.Add(true);
+                } else {
+                    nearby.Add(false);
+                }
+            } catch (KeyNotFoundException e) {
+                print(e.Message);
+            }
+        }
+        BeforeIsSpread = IsSpread;
+        IsSpread = spread.All(s => s);
+        BeforeNearBy = NearBy;
+        NearBy = nearby.All(n => n);
+        foreach (HandFlags flag in Enum.GetValues(typeof(HandFlags))) {
+            if (raiseLeftHands.All(r => r == flag) || raiseRightHands.All(r => r == flag)) {
+                handFlag |= flag;
+            }
+        }
+        bodyHistoryList.RemoveAt(0);
     }
 
     public static bool GetNewHandFlag(HandFlags flag) {
@@ -128,7 +145,9 @@ public class DealComm : MonoBehaviour {
         switch (e.dataIdentifier) {
             case "MainBodyData":
                 bodyHistoryList.Add((Dictionary<string, Dictionary<string, double>>)unityFuncPlug.DataDeserializing(e.dataBytes));
-                if (bodyHistoryList.Count > 11) bodyHistoryList.RemoveAt(0);
+                if (bodyHistoryList.Count > 11) {
+                    UpdateFlag();
+                }
                 break;
             case "BodyDirection":
                 receivedBodyDirection = (Dictionary<string, double>)unityFuncPlug.DataDeserializing(e.dataBytes);

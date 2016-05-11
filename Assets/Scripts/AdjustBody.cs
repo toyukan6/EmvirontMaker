@@ -76,7 +76,6 @@ namespace EnvironmentMaker {
                 pointers[(int)type].transform.position = this.transform.position + polygonData[0].PartsPosition(type);
                 pointers[(int)type].SetActive(false);
             }
-            pointers[(int)JointType.WristRight].SetActive(true);
             firstBodyParts = new Vector3[FrameAmount, Enum.GetNames(typeof(JointType)).Length];
             baseIndex = 0;
             selectedPointer = Instantiate(Selected);
@@ -111,11 +110,17 @@ namespace EnvironmentMaker {
 
                 //selectedObj.transform.position = firstJoint[number, (int)selectedType] + offsets[number, (int)selectedType];
                 selectedPointer.transform.position = selectedObj.transform.position;
+                var beforeType = selectedType;
 
                 if (Input.GetKeyDown(KeyCode.DownArrow)) {
                     selectedType = (JointType)(((int)selectedType + 1) % Enum.GetNames(typeof(JointType)).Length);
                 } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
                     selectedType = (JointType)(((int)selectedType - 1 + Enum.GetNames(typeof(JointType)).Length) % Enum.GetNames(typeof(JointType)).Length);
+                }
+
+                if (beforeType != selectedType) {
+                    pointers[(int)beforeType].SetActive(false);
+                    pointers[(int)selectedType].SetActive(true);
                 }
 
                 int before = pointsNumbers[0];
@@ -214,6 +219,7 @@ namespace EnvironmentMaker {
             var points = new List<Vector3>();
             var colors = new List<Color>();
             for (int i = 0; i < kinectNums; i++) {
+                //if (i == 0) continue;
                 foreach (var v in polygonData[pointsNumbers[i]].Positions[i]) {
                     points.Add(v);
                 }
@@ -281,19 +287,22 @@ namespace EnvironmentMaker {
             var search = new List<int>();
             reworkIndexes.ForEach(r => already.Add(r));
             var remove = new List<int>();
-            for (int i = 0; i < partsTypes.Length; i++) {
+            for (int i = 1; i < partsTypes.Length; i++) {
                 bool handMade = false;
                 var histgrams = new List<double[]>();
                 var chistgrams = new List<double[]>();
                 JointType joint = partsTypes[i];
+                JointType beforeJoint = partsTypes[i - 1];
                 var existsIndexes = new Dictionary<int, Vector3>();
                 var existsCIndexes = new Dictionary<int, Vector3>();
+                var lengthes = new List<float>();
                 for (int j = 0; j < reworkIndexes.Count; j++) {
                     int index = reworkIndexes[j];
                     if (polygonData[index].Offsets[joint] != Vector3.zero) {
                         handMade = true;
                         var jointIndex = polygonData[index].Voxel.GetIndexFromPosition(firstBodyParts[index, (int)joint] - this.transform.position);
                         var jointVoxel = polygonData[index].Voxel[(int)jointIndex.x, (int)jointIndex.y, (int)jointIndex.z];
+                        lengthes.Add((firstBodyParts[index, (int)joint] - firstBodyParts[index, (int)beforeJoint]).magnitude);
                         if (jointVoxel.Count > 0) {
                             var histgram = polygonData[index].GetVoxelHistgram(jointIndex);
                             var chistgram = polygonData[index].GetColorHistgram(jointIndex);
@@ -313,13 +322,14 @@ namespace EnvironmentMaker {
                         }
                     }
                 }
+                float length = lengthes.Average();
                 remove.ForEach(r => reworkIndexes.Remove(r));
                 Vector3 histVec = Vector3.zero, histCVec = Vector3.zero;
                 double[] averageHistgram = null, averageCHistgram = null;
                 if (histgrams.Count > 0) {
                     averageHistgram = new double[histgrams[0].Length];
                     for (int j = 0; j < averageHistgram.Length; j++) {
-                            averageHistgram[j] = histgrams.Average(h => h[j]);
+                        averageHistgram[j] = histgrams.Average(h => h[j]);
                     }
                 }
                 if (chistgrams.Count > 0) {
@@ -366,10 +376,15 @@ namespace EnvironmentMaker {
                         notFoundIndexes.Add(s);
                     }
                     if (result != Vector3.zero) {
+                        polygonData[s].PartsCorrection[joint] = Vector3.zero;
+                        var beforePosition = polygonData[s].PartsPosition(beforeJoint);
+                        var nowPosition = polygonData[s].PartsPosition(joint) + result;
+                        result = (nowPosition - beforePosition).normalized * length + beforePosition;
                         print(s + "の" + Enum.GetName(typeof(JointType), joint) + ":" + result);
                         polygonData[s].PartsCorrection[joint] = result;
                     }
                 }
+                notFoundIndexes.Sort();
                 if (handMade && notFoundIndexes.Count > 0) {
                     var startAndEnd = new List<Tuple<int, int>>();
                     int before = -1, start = -1, end = -1;

@@ -65,10 +65,7 @@ namespace EnvironmentMaker {
         public static List<List<Point>> BorderPoints(List<Point> points) {
             var dictionary = new List<KeyValuePair<double, List<Point>>>();
             var border = new List<List<Point>>();
-            var tmp = new List<Point>();
-            foreach (var v in points) {
-                tmp.Add(v);
-            }
+            var tmp = points.ToList();
             tmp.Sort((t1, t2) => Math.Sign(t1.Y - t2.Y));
             while (tmp.Count > 0) {
                 var v = tmp[0];
@@ -245,9 +242,7 @@ namespace EnvironmentMaker {
             var tmp = new List<Point>();
             int max = points.Count / 10;
             var rand = new System.Random();
-            foreach (var p in points) {
-                tmp.Add(p);
-            }
+            tmp = points.ToList();
             for (int i = 0; i < max; i++) {
                 var point = tmp[rand.Next(tmp.Count)];
                 result.Add(point);

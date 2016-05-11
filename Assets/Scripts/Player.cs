@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityStandardAssets.Characters.FirstPerson;
 
 namespace EnvironmentMaker {
@@ -17,6 +18,10 @@ namespace EnvironmentMaker {
         /// 一人称視点側のカメラ
         /// </summary>
         private Camera firstPersonCamera;
+        /// <summary>
+        /// IC用のカメラ
+        /// </summary>
+        private GameObject ICCameras;
         /// <summary>
         /// 俯瞰視点側のカメラ
         /// </summary>
@@ -58,11 +63,43 @@ namespace EnvironmentMaker {
         /// <summary>
         /// textures表示用ボタンの大きさと位置
         /// </summary>
-        private Rect showRect = new Rect(100, 0, 100, 100);
+        private Rect showRect = new Rect(100, 0, 100, 50);
         /// <summary>
         /// texturesを表示しているかどうか
         /// </summary>
         private bool showTextures = false;
+        /// <summary>
+        /// ポリゴン配置用のボタンの状態
+        /// </summary>
+        private bool polyButton;
+        /// <summary>
+        /// ポリゴン配置用ボタンの大きさと位置
+        /// </summary>
+        private Rect polyRect = new Rect(100, 50, 100, 50);
+        /// <summary>
+        /// ポリゴンを表示しているかどうか
+        /// </summary>
+        private bool showPolys = false;
+        /// <summary>
+        /// 配置用のポリゴンたち
+        /// </summary>
+        public GameObject[] Polygons;
+        /// <summary>
+        /// 配置するポリゴンのスケール
+        /// </summary>
+        private Vector3 polyScale = Vector3.one;
+        /// <summary>
+        /// 配置するポリゴンの色
+        /// </summary>
+        private Vector3 polyColor = Vector3.one;
+        /// <summary>
+        /// 置かれたポリゴンたち
+        /// </summary>
+        private List<GameObject> polyObjects = new List<GameObject>();
+        /// <summary>
+        /// ポリゴンの置かれている領域たち
+        /// </summary>
+        private List<Rect> polyRects = new List<Rect>();
         /// <summary>
         /// 画像の配置できるスクリーンの領域
         /// </summary>
@@ -103,10 +140,6 @@ namespace EnvironmentMaker {
         /// 選ばれている画像
         /// </summary>
         private GameObject selectedObject = null;
-        /// <summary>
-        /// 立方体のプレハブ
-        /// </summary>
-        public GameObject CubePrehab;
         /// <summary>
         /// クリックされた場所
         /// </summary>
@@ -231,6 +264,10 @@ namespace EnvironmentMaker {
         /// 上下に動かした物体組
         /// </summary>
         private List<List<GameObject>> updowns = new List<List<GameObject>>();
+        /// <summary>
+        /// 画像を置く高さ
+        /// </summary>
+        private float height = 0;
         #endregion
 
         #region 歩行モード
@@ -289,11 +326,17 @@ namespace EnvironmentMaker {
         /// 川の音
         /// </summary>
         AudioClip river;
+        /// <summary>
+        /// ドーム内かどうか
+        /// </summary>
+        public bool IsDoom = true;
         #endregion
 
         private void Awake() {
             Functions.Initialize();
-            firstPersonCamera = GameObject.Find("Fisheye view camera").GetComponent<Camera>();
+            firstPersonCamera = IsDoom ? GameObject.Find("Fisheye view camera").GetComponent<Camera>() : this.GetComponent<Camera>();
+            //ICCameras = GameObject.Find("Imersive");
+            firstPersonCamera.enabled = true;
             mainCamera = GameObject.Find("Main Camera").GetComponent<Camera>();
             textures = new List<Texture2D>();
             string path = "Textures";
@@ -335,7 +378,7 @@ namespace EnvironmentMaker {
             var zratio = cameraY * 1.1625f;
             screenPos = new Vector3(screenPos.x * xratio, screenPos.y, screenPos.z * zratio);
             screenPos += worldPos;
-            screenPos.y = 0;
+            screenPos.y = (showPolys) ? polyScale.z / 2 : height;
             return screenPos;
         }
 
@@ -345,19 +388,7 @@ namespace EnvironmentMaker {
                 if (BetweenScreenPos(editArea)) {
                     EditClicked(screenPos);
                 } else if (BetweenScreenPos(textureArea)) {
-                    int index = (int)((Input.mousePosition.x - editRect.width - showRect.width - leftRect.width) / 100);
-                    index += showTextureOffset;
-                    if (selectTexture) {
-                        indexes.Add(index);
-                    } else if (!selectRange) {
-                        var srender = Cursor.GetComponent<SpriteRenderer>();
-                        if (index >= 0 && index < textures.Count) {
-                            var texture = textures[index];
-                            var size = new Vector2(texture.width, texture.height);
-                            srender.sprite = Texture2DToSprite(texture);
-                            ChangeSelectedObject(null);
-                        }
-                    }
+                    TextureClicked();
                 }
             } else if (!Input.GetMouseButton(0)) {
                 waitFrame--;
@@ -413,12 +444,16 @@ namespace EnvironmentMaker {
             if (Input.GetKeyDown(KeyCode.U)) {
                 Undo();
             }
-            Cursor.transform.position = screenPos;
-            var cursorRender = Cursor.GetComponent<SpriteRenderer>();
-            if (BetweenScreenPos(editArea)) {
-                cursorRender.enabled = true;
-            } else {
-                cursorRender.enabled = false;
+            if (Cursor != null) {
+                Cursor.transform.position = screenPos;
+                var cursorRender = Cursor.GetComponent<SpriteRenderer>();
+                if (cursorRender != null) {
+                    if (BetweenScreenPos(editArea)) {
+                        cursorRender.enabled = true;
+                    } else {
+                        cursorRender.enabled = false;
+                    }
+                }
             }
             //cursorRender.enabled = false;
             //cursorRender.enabled = true;
@@ -427,18 +462,18 @@ namespace EnvironmentMaker {
         private void EditClicked(Vector3 screenPos) {
             if (selectRange ^ createRiver) {
                 startRange = screenPos;
-            } else {
-                var trect = textureRects.Find(t => Between(t, screenPos));
-                if (trect == new Rect(0, 0, 0, 0)) {
+            } else if (showTextures) {
+                SpriteRenderer srender = null;
+                if (Cursor != null) srender = Cursor.GetComponent<SpriteRenderer>();
+                var trects = textureRects.FindAll(t => Between(t, screenPos));
+                var index = trects.IndexOfMin(t => t.Area());
+                if (srender != null && srender.sprite != null) {
                     ChangeSelectedObject(null);
-                    var srender = Cursor.GetComponent<SpriteRenderer>();
-                    if (srender.sprite != null) {
-                        var obj = CreateSpriteObject(screenPos, srender.sprite);
-                        srender.sprite = null;
-                        undoAct = () => DeleteTexture(obj);
-                    }
-                } else {
-                    int index = textureRects.IndexOf(trect);
+                    var obj = CreateSpriteObject(screenPos, srender.sprite);
+                    srender.sprite = null;
+                    undoAct = () => DeleteTexture(obj);
+                    height = 0;
+                } else if (index != -1) {
                     int selectedIndex = textureObjects.IndexOf(selectedObject);
                     if (index != selectedIndex) {
                         ChangeSelectedObject(index);
@@ -447,6 +482,71 @@ namespace EnvironmentMaker {
                     } else {
                         CreateBillBoard(selectedObject);
                     }
+                }
+            } else if (showPolys) {
+                var prect = polyRects.Find(t => Between(t, screenPos));
+                if (prect == new Rect(0, 0, 0, 0)) {
+                    if (Cursor != null) {
+                        Cursor.tag = "3DObjects";
+                        var position = Cursor.transform.position;
+                        var scale = Cursor.transform.localScale;
+                        var rect = SetPolyObj(Cursor, position, scale);
+                        undoAct = () => {
+                            Destroy(Cursor.gameObject);
+                            polyObjects.Remove(Cursor);
+                            polyRects.Remove(rect);
+                        };
+                        Cursor = null;
+                        //CreateCursor(SpritePrehab);
+                    }
+                } else {
+                    int index = polyRects.IndexOf(prect);
+                    if (Input.GetKey(KeyCode.LeftControl)) {
+                        if (Cursor != null)
+                           DestroyImmediate(Cursor.gameObject);
+                        polyScale = polyObjects[index].transform.localScale;
+                        polyColor = polyObjects[index].GetComponent<MeshRenderer>().material.color.ToVector3();
+                        CreateCursor(polyObjects[index]);
+                    } else {
+                        Cursor = polyObjects[index];
+                        Cursor.tag = "3DObjects";
+                        polyObjects.RemoveAt(index);
+                        polyRects.RemoveAt(index);
+                    }
+                }
+            }
+        }
+
+        private Rect SetPolyObj(GameObject poly, Vector3 position, Vector3 scale) {
+            var rect = new Rect(position.x - scale.x / 2, position.z - scale.z / 2, scale.x, scale.z);
+            polyObjects.Add(poly);
+            polyRects.Add(rect);
+            return rect;
+        }
+
+        private void TextureClicked() {
+            int index = (int)((Input.mousePosition.x - editRect.width - showRect.width - leftRect.width) / 100);
+            if (showTextures) {
+                index += showTextureOffset;
+                if (selectTexture) {
+                    indexes.Add(index);
+                } else if (!selectRange) {
+                    if (Cursor == null) {
+                        CreateCursor(SpritePrehab);
+                    }
+                    var srender = Cursor.GetComponent<SpriteRenderer>();
+                    if (index >= 0 && index < textures.Count) {
+                        var texture = textures[index];
+                        var size = new Vector2(texture.width, texture.height);
+                        srender.sprite = Texture2DToSprite(texture);
+                        ChangeSelectedObject(null);
+                    }
+                }
+            } else if (showPolys) {
+                if (Cursor != null)
+                    DestroyImmediate(Cursor.gameObject);
+                if (index >= 0 && index < Polygons.Length) {
+                    CreateCursor(Polygons[index]);
                 }
             }
         }
@@ -675,6 +775,9 @@ namespace EnvironmentMaker {
                 clickedPosition = null;
             }
         }
+        private void SetPolyCursor(GameObject target) {
+            Cursor = target;
+        }
 
         private void Undo() {
             if (undoAct != null) {
@@ -756,7 +859,7 @@ namespace EnvironmentMaker {
             //print(state);
             var pos = this.transform.position;
             Back.transform.position = pos;
-            if (DealComm.GetNewHandFlag(HandFlags.LeftHandDown, HandFlags.RightHandMiddle) || Input.GetKeyDown(KeyCode.Space)) {
+            if (DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandUp) || Input.GetKeyDown(KeyCode.Space)) {
                 WalkRecord();
             } 
             if (walkRecordMode) {
@@ -769,7 +872,7 @@ namespace EnvironmentMaker {
                     }
                 }
             }
-            if (DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandDown) || Input.GetKeyDown(KeyCode.KeypadEnter)) {
+            if (DealComm.IsNewSpread || Input.GetKeyDown(KeyCode.KeypadEnter)) {
                 MotionRecord();
             }
             if (motionRecordMode && DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandUp)) {
@@ -782,7 +885,7 @@ namespace EnvironmentMaker {
                 double z = data["WristRight"]["Z"] - data["WristLeft"]["Z"];
                 characterValues.Add(new Vector3((float)x, (float)y, (float)z));
             }
-            if (DealComm.GetNewHandFlag(HandFlags.LeftHandMiddle, HandFlags.RightHandMiddle) || Input.GetKeyDown(KeyCode.N)) {
+            if (DealComm.NewNearBy || Input.GetKeyDown(KeyCode.N)) {
                 var texture = textures.Find(t => t.name == BillBoardName);
                 if (texture != null) {
                     var bill = CreateBillBoard(CreateSpriteObject(GetLookAtPosition(), Texture2DToSprite(texture)));
@@ -795,29 +898,86 @@ namespace EnvironmentMaker {
             if (DealComm.GetHandFlag(HandFlags.LeftHandUp, HandFlags.RightHandUp) || Input.GetKeyDown(KeyCode.U)) {
                 Undo();
             }
+
+            if (Input.GetKeyDown(KeyCode.J)) {
+                ChangeTime(1);
+            } else if (Input.GetKeyDown(KeyCode.K)) {
+                ChangeTime(-1);
+            }
+        }
+
+        private void ChangeTime(int diff) {
+            var objs = GameObject.FindGameObjectsWithTag("Objects");
+            var dic = new Dictionary<string, List<GameObject>>();
+            foreach (var o in objs) {
+                var srender = o.GetComponent<SpriteRenderer>();
+                if (srender != null) {
+                    var name = srender.sprite.name;
+                    if (!dic.ContainsKey(name)) {
+                        dic[name] = new List<GameObject>();
+                    }
+                    dic[name].Add(o);
+                }
+            }
+            string delim = "_";
+            foreach (var d in dic) {
+                var nameSplit = d.Key.Split(new[] { delim }, StringSplitOptions.RemoveEmptyEntries);
+                var texNames = textures.Select(t => t.name).ToList();
+                var list = new List<string>();
+                foreach (var t in texNames) {
+                    var splits = t.Split(new[] { delim }, StringSplitOptions.RemoveEmptyEntries);
+                    if (nameSplit[0] == splits[0]) {
+                        list.Add(t);
+                    }
+                }
+                if (list.Count > 1) {
+                    int index = list.IndexOf(d.Key);
+                    int nextIndex = (index + diff + list.Count) % list.Count;
+                    var nowTexture = textures.Find(t => t.name == list[index]);
+                    var nextTexture = textures.Find(t => t.name == list[nextIndex]);
+                    var width = (float)nowTexture.width / nextTexture.width;
+                    var height = (float)nowTexture.height / nextTexture.height;
+                    foreach (var go in d.Value) {
+                        var scale = go.transform.localScale;
+                        go.transform.localScale = new Vector3(scale.x * width, scale.y * height, scale.z);
+                        var srender = go.GetComponent<SpriteRenderer>();
+                        if (srender != null)
+                            srender.sprite = Texture2DToSprite(nextTexture);
+                    }
+                }
+            }
         }
 
         private string SearchMotionData(List<Vector3> points) {
-            var dictionary = new Dictionary<string, int>();
-            foreach (var d in PolygonManager.Data) {
-                dictionary[d.Key] = 0;
-                var result = new List<int>();
-                for (int i = 0; i < points.Count; i++) {
-                    double minLength = int.MaxValue;
-                    int minIndex = -1;
-                    for (int j = 0; j < d.Value.Length; j++) {
-                        double length = (points[i] - d.Value[j].GetCharacterValue()).sqrMagnitude;
-                        if (length < minLength) {
-                            minLength = length;
-                            minIndex = j;
-                        }
-                    }
-                    result.Add(minIndex);
-                }
-                dictionary[d.Key] = Functions.LISLength(result.ToArray());
+            var tmpPoints = points.ToList();
+            points.Clear();
+            int start = tmpPoints.Count / 10;
+            int end = tmpPoints.Count - start;
+            for (int i = start; i < end; i++) {
+                points.Add(tmpPoints[i]);
             }
-            int min = dictionary.Values.Max();
-            return dictionary.First(d => d.Value == min).Key;
+            if (points.Count > 0) {
+                var dictionary = new Dictionary<string, int>();
+                foreach (var d in PolygonManager.Data) {
+                    dictionary[d.Key] = 0;
+                    var result = new List<int>();
+                    for (int i = 0; i < points.Count; i++) {
+                        double minLength = int.MaxValue;
+                        int minIndex = -1;
+                        for (int j = 0; j < d.Value.Length; j++) {
+                            double length = (points[i] - d.Value[j].GetCharacterValue()).sqrMagnitude;
+                            if (length < minLength) {
+                                minLength = length;
+                                minIndex = j;
+                            }
+                        }
+                        result.Add(minIndex);
+                    }
+                    dictionary[d.Key] = Functions.LISLength(result.ToArray());
+                }
+                int min = dictionary.Values.Max();
+                return dictionary.First(d => d.Value == min).Key;
+            } else return "walk";
         }
 
         private Vector3 GetLookAtPosition() {
@@ -897,11 +1057,12 @@ namespace EnvironmentMaker {
         }
 
         private void OfflineScene() {
-            Application.LoadLevel("Offline");
+            SceneManager.LoadScene("Offline");
         }
 
         private void SaveData() {
             var objects = GameObject.FindGameObjectsWithTag("Objects");
+            var polyobjects = GameObject.FindGameObjectsWithTag("3DObjects");
             var pcs = GameObject.FindGameObjectsWithTag("PointCloud");
             updowns.RemoveAll(r => r.Exists(o => o == null));
             using (var writer = new FileStream(saveFileName, FileMode.OpenOrCreate)) {
@@ -917,37 +1078,35 @@ namespace EnvironmentMaker {
                     if (!groundTextureIsNull) {
                         bwriter.Write(groundTexture.name);
                     }
-                    bwriter.Write(objects.Length - 1);
+                    bwriter.Write(objects.Length);
                     foreach (var o in objects) {
-                        if (o != Cursor) {
-                            bwriter.Write(o.name);
-                            bwriter.Write(o.transform.position.x);
-                            bwriter.Write(o.transform.position.y);
-                            bwriter.Write(o.transform.position.z);
-                            bwriter.Write(o.transform.localEulerAngles.x);
-                            bwriter.Write(o.transform.localEulerAngles.y);
-                            bwriter.Write(o.transform.localEulerAngles.z);
-                            bwriter.Write(o.transform.localScale.x);
-                            bwriter.Write(o.transform.localScale.y);
-                            bwriter.Write(o.transform.localScale.z);
-                            bwriter.Write(o.layer);
-                            var bill = o.GetComponent<BillBoard>();
-                            bwriter.Write(bill.enabled);
-                            var osprite = o.GetComponent<SpriteRenderer>();
-                            bwriter.Write(osprite.sortingLayerID);
-                            var collider = o.GetComponent<BoxCollider>();
-                            bool isNull = false;
-                            try {
-                                var test = collider.enabled;
-                            } catch (MissingComponentException e) {
-                                isNull = true;
-                            }
-                            bwriter.Write(isNull);
-                            if (!isNull) {
-                                bwriter.Write(collider.size.x);
-                                bwriter.Write(collider.size.y);
-                                bwriter.Write(collider.size.z);
-                            }
+                        bwriter.Write(o.name);
+                        bwriter.Write(o.transform.position.x);
+                        bwriter.Write(o.transform.position.y);
+                        bwriter.Write(o.transform.position.z);
+                        bwriter.Write(o.transform.localEulerAngles.x);
+                        bwriter.Write(o.transform.localEulerAngles.y);
+                        bwriter.Write(o.transform.localEulerAngles.z);
+                        bwriter.Write(o.transform.localScale.x);
+                        bwriter.Write(o.transform.localScale.y);
+                        bwriter.Write(o.transform.localScale.z);
+                        bwriter.Write(o.layer);
+                        var bill = o.GetComponent<BillBoard>();
+                        bwriter.Write(bill.enabled);
+                        var osprite = o.GetComponent<SpriteRenderer>();
+                        bwriter.Write(osprite.sortingLayerID);
+                        var collider = o.GetComponent<BoxCollider>();
+                        bool isNull = false;
+                        try {
+                            isNull = collider.enabled;
+                        } catch (MissingComponentException e) {
+                            isNull = true;
+                        }
+                        bwriter.Write(isNull);
+                        if (!isNull) {
+                            bwriter.Write(collider.size.x);
+                            bwriter.Write(collider.size.y);
+                            bwriter.Write(collider.size.z);
                         }
                     }
                     bwriter.Write(updowns.Count);
@@ -994,6 +1153,23 @@ namespace EnvironmentMaker {
                     foreach (var p in pcs) {
                         p.GetComponent<PointCloud>().Save(bwriter);
                     }
+                    bwriter.Write(polyobjects.Length);
+                    foreach (var o in polyobjects) {
+                        bwriter.Write(o.name.Replace("(Clone)", ""));
+                        bwriter.Write(o.transform.position.x);
+                        bwriter.Write(o.transform.position.y);
+                        bwriter.Write(o.transform.position.z);
+                        bwriter.Write(o.transform.localEulerAngles.x);
+                        bwriter.Write(o.transform.localEulerAngles.y);
+                        bwriter.Write(o.transform.localEulerAngles.z);
+                        bwriter.Write(o.transform.localScale.x);
+                        bwriter.Write(o.transform.localScale.y);
+                        bwriter.Write(o.transform.localScale.z);
+                        var mrender = o.GetComponent<MeshRenderer>();
+                        bwriter.Write(mrender.material.color.r);
+                        bwriter.Write(mrender.material.color.g);
+                        bwriter.Write(mrender.material.color.b);
+                    }
                 }
             }
         }
@@ -1002,6 +1178,7 @@ namespace EnvironmentMaker {
             if (File.Exists(saveFileName)) {
                 bool beforeFailure = failure;
                 failure = false;
+                bool createGronud = false;
                 var dictionary = new Dictionary<string, Texture2D[]>();
                 using (var reader = new FileStream(saveFileName, FileMode.Open)) {
                     using (var breader = new BinaryReader(reader)) {
@@ -1017,6 +1194,7 @@ namespace EnvironmentMaker {
                             Texture2D targetexture = textures.Find(t => t.name == tname);
                             var destroy = SetGround(Texture2DToSprite(targetexture));
                             Destroy(destroy.gameObject);
+                            createGronud = true;
                         }
                         int objectNumber = breader.ReadInt32();
                         for (int i = 0; i < objectNumber; i++) {
@@ -1034,7 +1212,7 @@ namespace EnvironmentMaker {
                             var obj = CreateSpriteObject(new Vector3(x, y, z), Texture2DToSprite(targetTexture));
                             obj.transform.localEulerAngles = new Vector3(angleX, angleY, angleZ);
                             obj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
-                            if (angleX != 90) {
+                            if (Math.Abs(angleX - 90) > 0.1) {
                                 obj = CreateBillBoard(obj);
                                 obj.transform.localEulerAngles = new Vector3(angleX, angleY, angleZ);
                                 obj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
@@ -1058,8 +1236,8 @@ namespace EnvironmentMaker {
                         for (int i = 0; i < udNumber; i++) {
                             int ud = breader.ReadInt32();
                             if (ud > 0) {
-                                string name = breader.ReadString();
-                                Texture2D targetTexture = textures.Find(t => t.name == name);
+                                string tname = breader.ReadString();
+                                Texture2D targetTexture = textures.Find(t => t.name == tname);
                                 Direction d = (Direction)breader.ReadInt32();
                                 float x = breader.ReadSingle();
                                 float z = breader.ReadSingle();
@@ -1092,10 +1270,49 @@ namespace EnvironmentMaker {
                         }
                         int pcsNumber = breader.ReadInt32();
                         for (int i = 0; i < pcsNumber; i++) {
-                            Tuple<string, List<Vector2>> tuple = PointCloud.Load(breader);
-                            SetPointCloud(tuple.First, tuple.Second);
+                            Tuple<List<string>, List<Vector2>> tuple = PointCloud.Load(breader);
+                            var pc = SetPointCloud(tuple.First[0], tuple.Second).GetComponent<PointCloud>();
+                            for (int j = 1; j < tuple.First.Count; j++) {
+                                pc.AddMotion(tuple.First[i]);
+                            }
+                        }
+                        int polyCount = breader.ReadInt32();
+                        for (int i = 0; i < polyCount; i++) {
+                            string pname = breader.ReadString();
+                            float x = breader.ReadSingle();
+                            float y = breader.ReadSingle();
+                            float z = breader.ReadSingle();
+                            var position = new Vector3(x, y, z);
+                            float ax = breader.ReadSingle();
+                            float ay = breader.ReadSingle();
+                            float az = breader.ReadSingle();
+                            var angle = new Vector3(ax, ay, az);
+                            float sx = breader.ReadSingle();
+                            float sy = breader.ReadSingle();
+                            float sz = breader.ReadSingle();
+                            var scale = new Vector3(sx, sy, sz);
+                            GameObject target = null;
+                            if (pname == "Sphere") {
+                                target = Polygons[0];
+                            } else if (pname == "Cube") {
+                                target = Polygons[1];
+                            }
+                            var obj = Instantiate(target, position, Quaternion.identity) as GameObject;
+                            obj.transform.localScale = scale;
+                            obj.transform.localEulerAngles = angle;
+                            var mrender = obj.GetComponent<MeshRenderer>();
+                            float r = breader.ReadSingle();
+                            float g = breader.ReadSingle();
+                            float b = breader.ReadSingle();
+                            mrender.material.color = new Color(r, g, b);
+                            SetPolyObj(obj, position, scale);
                         }
                     }
+                }
+                if (createGronud) {
+                    int maxIndex = textureRects.IndexOfMax(t => t.Area());
+                    textureRects.RemoveAt(maxIndex);
+                    textureObjects.RemoveAt(maxIndex);
                 }
                 failure = beforeFailure;
             }
@@ -1104,18 +1321,25 @@ namespace EnvironmentMaker {
         private void IntoEditMode() {
             mainCamera.enabled = true;
             firstPersonCamera.enabled = false;
+            //ICCameras.SetActive(false);
             controller.enabled = false;
             if (Cursor == null) {
-                Cursor = Instantiate(SpritePrehab, Vector3.zero, Quaternion.Euler(90, 0, 0)) as GameObject;
+                CreateCursor(SpritePrehab);
             }
             if (playerIcon == null) {
                 playerIcon = Instantiate(iconPrehab, this.transform.position, Quaternion.Euler(90, 0, 0)) as GameObject;
             }
         }
 
+        private void CreateCursor(GameObject prehab) {
+            Cursor = Instantiate(prehab, Vector3.zero, Quaternion.Euler(90, 0, 0)) as GameObject;
+            Cursor.tag = "Cursor";
+        }
+
         private void IntoWalkMode() {
             mainCamera.enabled = false;
             firstPersonCamera.enabled = true;
+            //ICCameras.SetActive(true);
             controller.enabled = true;
             if (Cursor != null) {
                 Destroy(Cursor.gameObject);
@@ -1153,161 +1377,216 @@ namespace EnvironmentMaker {
         }
 
         private void EditModeGUI() {
-            var srender = Cursor.GetComponent<SpriteRenderer>();
-            showButton = GUI.Button(showRect, (showTextures ? "隠す" : "表示する"));
+            SpriteRenderer srender = null;
+            if (Cursor != null) {
+                srender = Cursor.GetComponent<SpriteRenderer>();
+            }
+            showButton = GUI.Button(showRect, (showTextures ? "隠す" : "画像を置く"));
             if (showButton) {
                 showTextures = !showTextures;
+                if (showTextures) {
+                    CreateCursor(SpritePrehab);
+                }
             }
             if (showTextures) {
-                string path = "Textures";
-                var files = Directory.GetFiles(path);
-                if (files.Length != textures.Count) {
-                    textures.Clear();
-                    showTextureOffset = 0;
-                    foreach (var f in files) {
-                        textures.Add(LoadTexture(f));
-                    }
+                ShowTexture();
+            }
+            polyButton = GUI.Button(polyRect, showPolys ? "隠す" : "ポリゴンを置く");
+            if (polyButton) {
+                showPolys = !showPolys;
+                if (showPolys) {
+                    DestroyImmediate(Cursor.gameObject);
                 }
-                if (showTextureOffset > 0)
-                    leftButton = GUI.Button(leftRect, "←");
-                else
-                    leftButton = false;
-                if (showTextureOffset < textures.Count - 3)
-                    rightButton = GUI.Button(rightRect, "→");
-                else
-                    rightButton = false;
-
-                if (leftButton) {
-                    showTextureOffset = Math.Max(0, showTextureOffset - 3);
-                } else if (rightButton) {
-                    showTextureOffset = Math.Min(showTextureOffset + 3, textures.Count - 3);
-                }
-
-                int firstX = (int)(leftRect.x + leftRect.width);
-                int max = 3;
-                for (int i = 0; i < max; i++) {
-                    if (i + showTextureOffset >= textures.Count) break;
-                    var texture = textures[i + showTextureOffset];
-                    GUI.DrawTexture(new Rect(firstX + 100 * i, 0, 100, 100), texture);
-                }
-                textureArea = new Rect(firstX, 0, 100 * max, 100);
-            } else {
+            }
+            if (showPolys) {
+                ShowPoly();
+            }
+            if (!showPolys && !showTextures) {
                 textureArea = new Rect();
             }
-            var back = GUI.Button(new Rect(0, 500, 50, 50), "背景");
-            if (back && srender.sprite != null) {
-                SetBackGround(srender.sprite.texture);
-            }
-            var ground = GUI.Button(new Rect(50, 500, 50, 50), "地面");
-            if (ground && srender.sprite != null) {
-                SetGround(srender.sprite);
-            }
-            string riverText = "川を作る";
-            if (createRiver) {
-                riverText = "形の指定を\n終了する";
-            }
-            if (GUI.Button(new Rect(0, 550, 100, 50), riverText) && !selectRange) {
-                if (createRiver) {
-                    StartCoroutine(CreateRiver());
-                } else {
-                    createRiver = true;
-                    range.Clear();
-                }
-            }
-            string errMessage = "";
-            GUI.TextField(new Rect(100, 500, 100, 20), "レイヤー");
-            layerStr = GUI.TextField(new Rect(100, 520, 100, 80), layerStr);
-            if (!int.TryParse(layerStr, out layer)) {
-                errMessage += "自然数を入力してください:layer";
-            } else if (layer < 0 || layer >= Functions.SortingLayerUniqueIDs.Length) {
-                errMessage += "レイヤーは" + Functions.SortingLayerUniqueIDs.Length + "までにしてください";
-            }
-            var motion = GUI.Button(new Rect(200, 500, 100, 50), "モーションを\n置く");
-            GUI.TextField(new Rect(300, 500, 100, 20), "モーション名");
-            motionName = GUI.TextField(new Rect(300, 520, 100, 80), motionName);
-            if (motion) {
-                if (Directory.Exists("polygons/" + motionName)) {
-                    List<Vector2> positions = range.Select(r => r.position).ToList();
-                    Vector2? start = null, end = null;
-                    if (positions.Count > 0) {
-                        start = positions[0];
-                        if (positions.Count > 1) {
-                            end = positions[1];
-                        }
+            if (showPolys) {
+                GUI.TextArea(new Rect(0, 500, 50, 30), "たて");
+                GUI.TextArea(new Rect(0, 530, 50, 30), "よこ");
+                GUI.TextArea(new Rect(0, 560, 50, 30), "高さ");
+                polyScale.y = GUI.HorizontalScrollbar(new Rect(50, 500, 100, 30), polyScale.y, 0.1f, 0, 10);
+                polyScale.x = GUI.HorizontalScrollbar(new Rect(50, 530, 100, 30), polyScale.x, 0.1f, 0, 10);
+                polyScale.z = GUI.HorizontalScrollbar(new Rect(50, 560, 100, 30), polyScale.z, 0.1f, 0, 10);
+                polyColor.x = GUI.HorizontalScrollbar(new Rect(200, 500, 100, 30), polyColor.x, 0.1f, 0, 1);
+                polyColor.y = GUI.HorizontalScrollbar(new Rect(200, 530, 100, 30), polyColor.y, 0.1f, 0, 1);
+                polyColor.z = GUI.HorizontalScrollbar(new Rect(200, 560, 100, 30), polyColor.z, 0.1f, 0, 1);
+                if (Cursor != null) {
+                    Cursor.transform.localScale = polyScale;
+                    var mrender = Cursor.GetComponent<MeshRenderer>();
+                    if (mrender != null) {
+                        GUI.TextArea(new Rect(150, 500, 50, 30), "R");
+                        GUI.TextArea(new Rect(150, 530, 50, 30), "G");
+                        GUI.TextArea(new Rect(150, 560, 50, 30), "B");
+                        mrender.material.color = new Color(polyColor.x, polyColor.y, polyColor.z);
                     }
-                    SetPointCloud(motionName, positions);
-                } else {
-                    errMessage += "そのようなディレクトリは存在しません:モーション";
                 }
-            }
-            string[] rightClickTexts = new[] { "画像を沈める", "画像を上げる" };
-            if (GUI.Button(new Rect(200, 550, 100, 50), rightClickTexts[(int)rightClickState])) {
-                rightClickState = (RightClickState)(((int)rightClickState + 1) % Enum.GetNames(typeof(RightClickState)).Length);
-            }
-            if (GUI.Button(new Rect(400, 500, 100, 20), fixing ? "角度固定中" : "角度自在中")) {
-                fixing = !fixing;
-            }
-            GUI.TextField(new Rect(400, 520, 100, 20), "角度");
-            var before = degreeStr;
-            degreeStr = GUI.TextField(new Rect(400, 540, 100, 60), degreeStr);
-            if (before != degreeStr) {
-                if (double.TryParse(degreeStr, out degree)) {
-                    var csrender = Cursor.GetComponent<SpriteRenderer>();
-                    Vector3? angle = null;
-                    if (csrender != null) {
-                        angle = csrender.transform.localEulerAngles;
-                    }
-                    if (angle.HasValue) {
-                        csrender.transform.localEulerAngles = new Vector3(angle.Value.x, (float)degree, angle.Value.z);
-                    }
-                } else {
-                    errMessage += "実数を入力してください:角度";
-                }
-            }
-            if (GUI.Button(new Rect(500, 500, 100, 50), failure ? "障害物" : "障害物\nでない")) {
-                failure = !failure;
-            }
-            string selectRangeShow = "";
-            if (selectTexture) {
-                selectRangeShow = "画像選択を\n終える";
-            } else if (selectRange) {
-                selectRangeShow = "線分選択を\n終える";
             } else {
-                selectRangeShow = "領域選択開始";
-            }
-            if (GUI.Button(new Rect(500, 550, 100, 50), selectRangeShow) && !createRiver) {
-                if (selectTexture) {
-                    StartCoroutine(RandomEstablish());
-                } else if (selectRange) {
-                    selectTexture = true;
-                    showTextures = true;
-                } else {
-                    selectRange = true;
-                    var csrender = Cursor.GetComponent<SpriteRenderer>();
-                    csrender.sprite = null;
-                    range.Clear();
-                    indexes.Clear();
+                var back = GUI.Button(new Rect(0, 500, 50, 50), "背景");
+                if (back && srender != null && srender.sprite != null) {
+                    SetBackGround(srender.sprite.texture);
                 }
-            }
-            GUI.TextArea(new Rect(610, 500, 20, 20), "高");
-            GUI.TextArea(new Rect(610, 580, 20, 20), "低");
-            GUI.TextArea(new Rect(610, 530, 20, 40), "密\n度");
-            density = GUI.VerticalSlider(new Rect(600, 500, 10, 100), density, 1, 0);
+                var ground = GUI.Button(new Rect(50, 500, 50, 50), "地面");
+                if (ground && srender != null && srender.sprite != null) {
+                    SetGround(srender.sprite);
+                }
+                string riverText = "川を作る";
+                if (createRiver) {
+                    riverText = "形の指定を\n終了する";
+                }
+                if (GUI.Button(new Rect(0, 550, 100, 50), riverText) && !selectRange) {
+                    if (createRiver) {
+                        StartCoroutine(CreateRiver());
+                    } else {
+                        createRiver = true;
+                        range.Clear();
+                    }
+                }
+                string errMessage = "";
+                GUI.TextField(new Rect(100, 500, 100, 20), "レイヤー");
+                layerStr = GUI.TextField(new Rect(100, 520, 100, 80), layerStr);
+                if (!int.TryParse(layerStr, out layer)) {
+                    errMessage += "自然数を入力してください:layer";
+                } else if (layer < 0 || layer >= Functions.SortingLayerUniqueIDs.Length) {
+                    errMessage += "レイヤーは" + Functions.SortingLayerUniqueIDs.Length + "までにしてください";
+                }
+                var motion = GUI.Button(new Rect(200, 500, 100, 50), "モーションを\n置く");
+                GUI.TextField(new Rect(300, 500, 100, 20), "モーション名");
+                motionName = GUI.TextField(new Rect(300, 520, 100, 80), motionName);
+                if (motion) {
+                    if (Directory.Exists("polygons/" + motionName)) {
+                        List<Vector2> positions = range.Select(r => r.position).ToList();
+                        Vector2? start = null, end = null;
+                        if (positions.Count > 0) {
+                            start = positions[0];
+                            if (positions.Count > 1) {
+                                end = positions[1];
+                            }
+                        }
+                        SetPointCloud(motionName, positions);
+                    } else {
+                        errMessage += "そのようなディレクトリは存在しません:モーション";
+                    }
+                }
+                string[] rightClickTexts = new[] { "画像を沈める", "画像を上げる" };
+                if (GUI.Button(new Rect(200, 550, 100, 50), rightClickTexts[(int)rightClickState])) {
+                    rightClickState = (RightClickState)(((int)rightClickState + 1) % Enum.GetNames(typeof(RightClickState)).Length);
+                }
+                if (GUI.Button(new Rect(400, 500, 100, 20), fixing ? "角度固定中" : "角度自在中")) {
+                    fixing = !fixing;
+                }
+                GUI.TextField(new Rect(400, 520, 100, 20), "角度");
+                var before = degreeStr;
+                degreeStr = GUI.TextField(new Rect(400, 540, 100, 60), degreeStr);
+                if (before != degreeStr) {
+                    if (double.TryParse(degreeStr, out degree)) {
+                        var csrender = Cursor.GetComponent<SpriteRenderer>();
+                        Vector3? angle = null;
+                        if (csrender != null) {
+                            angle = csrender.transform.localEulerAngles;
+                        }
+                        if (angle.HasValue) {
+                            csrender.transform.localEulerAngles = new Vector3(angle.Value.x, (float)degree, angle.Value.z);
+                        }
+                    } else {
+                        errMessage += "実数を入力してください:角度";
+                    }
+                }
+                if (GUI.Button(new Rect(500, 500, 100, 50), failure ? "障害物" : "障害物\nでない")) {
+                    failure = !failure;
+                }
+                string selectRangeShow = "";
+                if (selectTexture) {
+                    selectRangeShow = "画像選択を\n終える";
+                } else if (selectRange) {
+                    selectRangeShow = "線分選択を\n終える";
+                } else {
+                    selectRangeShow = "領域選択開始";
+                }
+                if (GUI.Button(new Rect(500, 550, 100, 50), selectRangeShow) && !createRiver) {
+                    if (selectTexture) {
+                        StartCoroutine(RandomEstablish());
+                    } else if (selectRange) {
+                        selectTexture = true;
+                        showTextures = true;
+                    } else {
+                        selectRange = true;
+                        var csrender = Cursor.GetComponent<SpriteRenderer>();
+                        csrender.sprite = null;
+                        range.Clear();
+                        indexes.Clear();
+                    }
+                }
+                GUI.TextArea(new Rect(610, 500, 20, 20), "高");
+                GUI.TextArea(new Rect(610, 580, 20, 20), "低");
+                GUI.TextArea(new Rect(610, 530, 20, 40), "密\n度");
+                density = GUI.VerticalSlider(new Rect(600, 500, 10, 100), density, 1, 0);
 
-            GUI.TextArea(new Rect(630, 500, 85, 20), "開始値");
-            extensionStartStr = GUI.TextField(new Rect(630, 520, 85, 80), extensionStartStr);
-            if (!int.TryParse(extensionStartStr, out extensionStart)) {
-                errMessage += "整数を入力してください:開始値";
+                GUI.TextArea(new Rect(630, 500, 85, 20), "開始値");
+                extensionStartStr = GUI.TextField(new Rect(630, 520, 85, 30), extensionStartStr);
+                if (!int.TryParse(extensionStartStr, out extensionStart)) {
+                    errMessage += "整数を入力してください:開始値";
+                }
+                GUI.TextArea(new Rect(715, 500, 85, 20), "閾値");
+                extensionThresholdStr = GUI.TextField(new Rect(715, 520, 85, 30), extensionThresholdStr);
+                if (!int.TryParse(extensionThresholdStr, out extensionThreshold)) {
+                    errMessage += "整数を入力してください:閾値";
+                }
+                height = GUI.HorizontalSlider(new Rect(630, 550, 170, 30), height, -10, 10);
+                //print(errMessage);
             }
-            GUI.TextArea(new Rect(715, 500, 85, 20), "閾値");
-            extensionThresholdStr = GUI.TextField(new Rect(715, 520, 85, 80), extensionThresholdStr);
-            if (!int.TryParse(extensionThresholdStr, out extensionThreshold)) {
-                errMessage += "整数を入力してください:閾値";
-            }
-            //print(errMessage);
         }
 
-        private void SetPointCloud(string motionName, List<Vector2> route) {
+        private void ShowTexture() {
+            if (showPolys) showPolys = false;
+            string path = "Textures";
+            var files = Directory.GetFiles(path);
+            if (files.Length != textures.Count) {
+                textures.Clear();
+                showTextureOffset = 0;
+                foreach (var f in files) {
+                    textures.Add(LoadTexture(f));
+                }
+            }
+            if (showTextureOffset > 0)
+                leftButton = GUI.Button(leftRect, "←");
+            else
+                leftButton = false;
+            if (showTextureOffset < textures.Count - 3)
+                rightButton = GUI.Button(rightRect, "→");
+            else
+                rightButton = false;
+
+            if (leftButton) {
+                showTextureOffset = Math.Max(0, showTextureOffset - 3);
+            } else if (rightButton) {
+                showTextureOffset = Math.Min(showTextureOffset + 3, textures.Count - 3);
+            }
+
+            int firstX = (int)(leftRect.x + leftRect.width);
+            int max = 3;
+            for (int i = 0; i < max; i++) {
+                if (i + showTextureOffset >= textures.Count) break;
+                var texture = textures[i + showTextureOffset];
+                GUI.DrawTexture(new Rect(firstX + 100 * i, 0, 100, 100), texture);
+            }
+            textureArea = new Rect(firstX, 0, 100 * max, 100);
+        }
+
+        private void ShowPoly() {
+            if (showTextures) showTextures = false;
+            var polyTextures = Resources.LoadAll("poly").Select(p => (Texture2D)p).ToList();
+            int firstX = (int)(leftRect.x + leftRect.width);
+            for (int i = 0; i < polyTextures.Count; i++) {
+                GUI.DrawTexture(new Rect(firstX + 100 * i, 0, 100, 100), polyTextures[i]);
+            }
+            textureArea = new Rect(firstX, 0, 100 * 2, 100);
+        }
+
+        private GameObject SetPointCloud(string motionName, List<Vector2> route) {
             var pos = GetScreenPos(mainCamera.transform.position);
             pos.y = 0.8f;
             var pcObj = Instantiate(PointCloudPrehab, pos, Quaternion.identity) as GameObject;
@@ -1319,6 +1598,7 @@ namespace EnvironmentMaker {
             undoAct = () => {
                 Destroy(pcObj.gameObject);
             };
+            return pcObj;
         }
 
         private void SetBackGround(Texture2D texture) {
@@ -1347,7 +1627,8 @@ namespace EnvironmentMaker {
             }
             groundTexture = texture;
             var obj = CreateSpriteObject(Vector3.zero, Texture2DToSprite(texture));
-            textureRects[textureRects.Count - 1] = new Rect(0, 0, 1, 1);
+            textureObjects.RemoveAt(textureRects.Count - 1);
+            textureRects.RemoveAt(textureRects.Count - 1);
             obj.transform.localEulerAngles = new Vector3(90, 0, 0);
             float x = 3.65f * Math.Max(2750f / texture.width, 11470f / texture.height);
             obj.transform.localScale = new Vector3(x, x, 1);
