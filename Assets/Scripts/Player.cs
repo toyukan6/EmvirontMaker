@@ -1051,13 +1051,6 @@ namespace EnvironmentMaker {
             if (load) {
                 LoadData();
             }
-            if (GUI.Button(new Rect(700, 0, 100, 100), "モーション\n編集")) {
-                OfflineScene();
-            }
-        }
-
-        private void OfflineScene() {
-            SceneManager.LoadScene("Offline");
         }
 
         private void SaveData() {
